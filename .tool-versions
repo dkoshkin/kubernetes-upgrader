@@ -1,0 +1,7 @@
+kubebuilder 3.11.1
+gojq 0.12.13
+golang 1.20.7
+golangci-lint 1.51.2
+goreleaser 1.16.2
+pre-commit 3.1.1
+shfmt 3.6.0

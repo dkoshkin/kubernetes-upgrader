@@ -1,0 +1,118 @@
+# Copyright 2023 Dimitri Koshkin. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+project_name: kubernetes-upgrader
+
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+      - '^build:'
+
+before:
+  hooks:
+    - make release-manifests IMG=ghcr.io/dkoshkin/kubernetes-upgrader:v{{trimprefix .Version "v"}}
+
+release:
+  footer: |
+    ### Summary
+    **Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/{{ .PreviousTag }}...{{ .Tag }}
+  extra_files:
+    - glob: ./dist/components.yaml
+
+builds:
+  - id: kubernetes-upgrader
+    dir: ./cmd/
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s
+      - -w
+      - -X {{.Env.GOMODULENAME}}/internal/version.version={{.Version}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.major={{.Major}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.minor={{.Minor}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.patch={{.Patch}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.revision={{.FullCommit}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.commitDate={{.CommitDate}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.branch={{.Branch}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.gitTreeState={{.Env.GIT_TREE_STATE}}
+      - -X {{.Env.GOMODULENAME}}/internal/version.builtBy=goreleaser
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    hooks:
+      post:
+        - cmd: make SKIP_UPX={{ if index .Env "SKIP_UPX" }}{{ .Env.SKIP_UPX }}{{ else }}{{ .IsSnapshot }}{{ end }} GOOS={{ .Os }} GOARCH={{ .Arch }} UPX_TARGET={{ .Path }} upx
+archives:
+  - name_template: '{{ .ProjectName }}_v{{trimprefix .Version "v"}}_{{ .Os }}_{{ .Arch }}'
+    format_overrides:
+      - goos: windows
+        format: zip
+    builds:
+      - kubernetes-upgrader
+    rlcp: true
+dockers:
+  - image_templates:
+      # Specify the image tag including `-amd64` suffix if the build is not a snapshot build or is not being built on
+      # arm64 machine. This allows for using the snapshot image build without the archtecture specific suffix
+      # consistently on local machines, i.e. can always use `ghcr.io/dkoshkin/kubernetes-upgrader:v<VERSION>` on the machine the snapshot
+      # is built on.
+      #
+      # For a release build the `-amd64` suffix will always be included and the `docker_manifests` specification below
+      # will create the final multiplatform manifest to be pushed to the registry.
+      - 'ghcr.io/dkoshkin/kubernetes-upgrader:v{{trimprefix .Version "v"}}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "amd64")) }}-amd64{{ end }}'
+    use: buildx
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=kubernetes-upgrader"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+  - image_templates:
+      # Specify the image tag including `-amd64v8` suffix if the build is not a snapshot build or is not being built on
+      # arm64 machine. This allows for using the snapshot image build without the archtecture specific suffix
+      # consistently on local machines, i.e. can always use `ghcr.io/dkoshkin/kubernetes-upgrader:v<VERSION>` on the machine the snapshot
+      # is built on.
+      #
+      # For a release build the `-amd64v8` suffix will always be included and the `docker_manifests` specification below
+      # will create the final multiplatform manifest to be pushed to the registry.
+      - 'ghcr.io/dkoshkin/kubernetes-upgrader:v{{trimprefix .Version "v"}}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "arm64")) }}-arm64v8{{ end }}'
+    use: buildx
+    goarch: arm64
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=sekubernetes-upgradered"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+docker_manifests:
+  - name_template: ghcr.io/dkoshkin/kubernetes-upgrader:v{{trimprefix .Version "v"}}
+    image_templates:
+      - ghcr.io/dkoshkin/kubernetes-upgrader:v{{trimprefix .Version "v"}}-amd64
+      - ghcr.io/dkoshkin/kubernetes-upgrader:v{{trimprefix .Version "v"}}-arm64v8
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incminor .Tag }}-dev"
