@@ -1,0 +1,130 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: job-annotator-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: job-annotator-role
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: job-annotator-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: job-annotator-sa
+    apiGroup: ""
+roleRef:
+  kind: Role
+  name: job-annotator-role
+  apiGroup: ""
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: KubernetesMachineImage
+metadata:
+  labels:
+    app.kubernetes.io/name: kubernetesmachineimage
+    app.kubernetes.io/instance: kubernetesmachineimage-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: kubernetesmachineimage-sample
+spec:
+  version: v1.26.7
+  jobTemplate:
+    spec:
+      initContainers:
+        - name: config-writer
+          image: docker.io/library/ubuntu:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/bash"
+            - "-o"
+            - "xtrace" # Verbose output
+            - "-o"
+            - "errexit" # Exit on any error, except in a pipeline
+            - "-c"
+            - |
+              IFS='.' read -r MAJOR MINOR PATCH <<<"${KUBERNETES_VERSION//v/}"
+              cat <<EOF >/tmp/kubernetes-vars/kubernetes.json
+              {
+                "kubernetes_deb_version": "${KUBERNETES_VERSION//v/}-00",
+                "kubernetes_rpm_version": "${KUBERNETES_VERSION//v/}-0",
+                "kubernetes_semver": "${KUBERNETES_VERSION}",
+                "kubernetes_series": "v${MAJOR}.${MINOR}",
+                "disk_size": "81920"
+              }
+              EOF
+          volumeMounts:
+            - name: kubernetes-vars
+              mountPath: /tmp/kubernetes-vars/
+      containers:
+        - name: runner
+          image: registry.k8s.io/scl-image-builder/cluster-node-image-builder-amd64:v0.1.18
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/bash"
+            - "-o"
+            - "xtrace" # Verbose output
+            - "-o"
+            - "errexit" # Exit on any error, except in a pipeline
+            - "-c"
+            - |
+              make build-node-ova-vsphere-ubuntu-2004
+              jq '.builds[0].artifact_id' -r output/*/packer-manifest.json > /tmp/output/id.txt
+          env:
+            - name: PACKER_VAR_FILES
+              value: "/tmp/vsphere-vars/vsphere.json /tmp/kubernetes-vars/kubernetes.json"
+          volumeMounts:
+            - name: kubernetes-vars
+              mountPath: /tmp/kubernetes-vars/
+            - name: vsphere-vars
+              mountPath: "/tmp/vsphere-vars/"
+              readOnly: true
+            - name: output
+              mountPath: /tmp/output/
+        - name: output-writer
+          image: bitnami/kubectl:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/bash"
+            - "-o"
+            - "xtrace" # Verbose output
+            - "-o"
+            - "errexit" # Exit on any error, except in a pipeline
+            - "-c"
+            - |
+              until [ -f /tmp/output/id.txt ]; do sleep 30; done; echo "Found image ID file"
+              kubectl annotate job \
+                ${JOB_NAME} \
+                -n ${JOB_NAMESPACE} \
+                kubernetesupgraded.dimitrikoshkin.com/image-id=$(cat /tmp/output/id.txt)
+          env:
+          - name: JOB_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['job-name']
+          - name: JOB_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          volumeMounts:
+            - name: output
+              mountPath: /tmp/output/
+      serviceAccountName: job-annotator-sa
+      volumes:
+        - name: kubernetes-vars
+          emptyDir: {}
+        - name: vsphere-vars
+          secret:
+            secretName: image-builder-vsphere-vars
+        - name: output
+          emptyDir: {}
+      restartPolicy: Never

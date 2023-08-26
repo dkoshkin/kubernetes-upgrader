@@ -1,0 +1,109 @@
+# Copyright 2023 Dimitri Koshkin. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+run:
+  timeout: 5m
+  go: '1.20'
+  skip-files:
+    - main.go
+    - api/v1alpha1/groupversion_info.go
+    - api/v1alpha1/zz_generated.deepcopy.go
+
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - errchkjson
+    - errname
+    - exhaustive
+    - exportloopref
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - gci
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - goerr113
+    - gofmt
+    - gofumpt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - noctx
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
+    - stylecheck
+    - tenv
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - wrapcheck
+
+linters-settings:
+  depguard:
+    list-type: blacklist
+    packages:
+      - k8s.io/kubernetes
+    packages-with-error-messages:
+      k8s.io/kubernetes: "do not use k8s.io/kubernetes directly"
+  errcheck:
+    exclude-functions:
+      - encoding/json.Marshal
+      - encoding/json.MarshalIndent
+  errchkjson:
+    check-error-free-encoding: true
+  gci:
+    sections:
+      - Standard
+      - Default
+      - Prefix(github.com/dkoshkin)
+      - Prefix(github.com/dkoshkin/kubernetes-upgrader)
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+  gofumpt:
+    lang-version: "1.20"
+    extra-rules: true
+  lll:
+    line-length: 120
+
+issues:
+  exclude-rules:
+    # ignore errcheck for code under a /test folder
+    - path: "test/*"
+      linters:
+        - errcheck
+    # ignore errcheck for flags.Parse (it is expected that we flag.ExitOnError)
+    # ignore response.WriteError as it always returns the err it was passed
+    - source: "flags.Parse|response.WriteError"
+      linters:
+        - errcheck
