@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 (2023-09-02)
+
+## What's Changed
+* chore: add upx tool by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/14
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.1.0...v0.1.1
+
 ## 0.1.0 (2023-09-02)
 
 ## What's Changed
