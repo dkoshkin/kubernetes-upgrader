@@ -114,6 +114,11 @@ release-manifests: manifests kustomize ## Generate release manifests.
 	$(KUSTOMIZE) build config/default > out/components.yaml
 	git checkout HEAD -- config/manager/kustomization.yaml
 
+.PHONY: release-samples
+release-samples: ## Generate release samples.
+	mkdir -p out
+	cp -r config/samples out/samples
+
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
