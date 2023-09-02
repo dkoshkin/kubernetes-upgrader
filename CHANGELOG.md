@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 (2023-09-02)
+
+## What's Changed
+* chore: login to ghcr before release by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/16
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.1.1...v0.1.2
+
 ## 0.1.1 (2023-09-02)
 
 ## What's Changed
