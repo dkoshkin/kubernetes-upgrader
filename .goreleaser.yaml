@@ -21,13 +21,14 @@ changelog:
 before:
   hooks:
     - make release-manifests IMG=ghcr.io/dkoshkin/kubernetes-upgrader:v{{trimprefix .Version "v"}}
+    - make release-samples
 
 release:
   footer: |
     ### Summary
     **Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/{{ .PreviousTag }}...{{ .Tag }}
   extra_files:
-    - glob: ./out/components.yaml
+    - glob: ./out/*
 
 builds:
   - id: kubernetes-upgrader
