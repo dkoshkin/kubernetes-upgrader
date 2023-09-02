@@ -178,6 +178,8 @@ func (r *KubernetesMachineImageReconciler) handleJob(
 		}
 		logger.Info(fmt.Sprintf("Job succeeded, updating with image id: %s", imageID))
 		kubernetesMachineImage.Spec.ImageID = imageID
+		kubernetesMachineImage.Status.Ready = true
+		kubernetesMachineImage.Status.Phase = kubernetesupgradedv1alpha1.KubernetesMachineImagePhaseCreated
 		return ctrl.Result{}, nil
 	case status.Failed > 0:
 		logger.Info("Job failed, will not requeue")
