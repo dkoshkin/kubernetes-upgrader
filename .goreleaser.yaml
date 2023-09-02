@@ -60,6 +60,14 @@ builds:
     hooks:
       post:
         - cmd: make SKIP_UPX={{ if index .Env "SKIP_UPX" }}{{ .Env.SKIP_UPX }}{{ else }}{{ .IsSnapshot }}{{ end }} GOOS={{ .Os }} GOARCH={{ .Arch }} UPX_TARGET={{ .Path }} upx
+archives:
+  - name_template: '{{ .ProjectName }}_v{{trimprefix .Version "v"}}_{{ .Os }}_{{ .Arch }}'
+    format_overrides:
+      - goos: windows
+        format: zip
+    builds:
+      - kubernetes-upgrader
+    rlcp: true
 dockers:
   - image_templates:
       # Specify the image tag including `-amd64` suffix if the build is not a snapshot build or is not being built on
