@@ -25,7 +25,7 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
 1.  Deploy the CRDs and the controllers:
 
     ```sh
-    kubectl apply --server-side -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/components.yaml
+    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/components.yaml
     ```
 
 1.  Create a Secret with vSphere credentials:
@@ -45,13 +45,13 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
       "convert_to_template": "true"
     }
     EOF
-    kubectl create secret generic vsphere-credentials --from-file=vsphere.json
+    kubectl create secret generic image-builder-vsphere-vars --from-file=vsphere.json
     ```
 
 1.  Deploy the samples:
 
     ```sh
-    kubectl apply --server-side -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/sample-with-job-template.yaml
+    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/sample-with-job-template.yaml
     ```
 
 1.  The controller will create a Job to build the image, after some time you should see the image in the vSphere UI.
@@ -67,6 +67,13 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
 
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+
+The controller deploys a webhook which requires a TLS certificate. The easiest way to get a certificate is to use [cert-manager](https://cert-manager.io/docs/installation/kubernetes/).
+You can deploy cert-manager using the following command:
+
+```sh
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.4/cert-manager.yaml
+```
 
 ### Running on the cluster
 
