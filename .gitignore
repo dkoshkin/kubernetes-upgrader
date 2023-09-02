@@ -48,6 +48,9 @@ Dockerfile.cross
 
 !vendor/**/zz_generated.*
 
+# release artifacts
+out/
+
 # editor and IDE paraphernalia
 .idea
 .vscode

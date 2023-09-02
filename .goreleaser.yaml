@@ -27,7 +27,7 @@ release:
     ### Summary
     **Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/{{ .PreviousTag }}...{{ .Tag }}
   extra_files:
-    - glob: ./dist/components.yaml
+    - glob: ./out/components.yaml
 
 builds:
   - id: kubernetes-upgrader
