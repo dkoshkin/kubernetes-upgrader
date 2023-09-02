@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 (2023-09-02)
+
+## What's Changed
+* build: use out/ directory for components yaml by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/18
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.1.2...v0.1.3
+
 ## 0.1.2 (2023-09-02)
 
 ## What's Changed
