@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 (2023-09-02)
+
+## What's Changed
+* chore: revert "don't publish archives in releases" by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/25
+* chore: more README fixes by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/26
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.2.0...v0.2.1
+
 ## 0.2.0 (2023-09-02)
 
 ## What's Changed
