@@ -5,20 +5,72 @@
 
 # kubernetes-upgrader
 
-// TODO(user): Add simple overview of use/purpose
+A set of Kubernetes controllers to automate Kubernetes clusters upgrade using [Cluster API's ClusterClass](https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-class/).
 
 ## Description
 
-// TODO(user): An in-depth paragraph about your project and overview of use
+This project is a set of Kubernetes controllers that build Kubernetes machine images using upstream [image-builder](https://github.com/kubernetes-sigs/image-builder),
+and then use those images to upgrade Kubernetes clusters that are using [Cluster API's ClusterClass](https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-class/).
+
+This should work with any Infrastructure provider supported by image-builder, but it was only tested with [vSphere's CAPV](https://github.com/kubernetes-sigs/cluster-api-provider-vsphere).
 
 ## Getting Started
 
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
+This will deploy the controllers and a sample to build a vSphere OVA,
+read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vsphere) on how to configure the vSphere provider.
+
+1.  Deploy the CRDs and the controllers:
+
+    ```sh
+    kubectl apply --server-side -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/components.yaml
+    ```
+
+1.  Create a Secret with vSphere credentials:
+
+    ```sh
+    cat << 'EOF' > vsphere.json
+    {
+      "vcenter_server":"$VSPHERE_SERVER",
+      "insecure_connection": "true",
+      "username":"$VSPHERE_USERNAME",
+      "password":"$VSPHERE_PASSWORD",
+      "vsphere_datacenter": "$VSPHERE_DATACENTER",
+      "cluster": "$VSPHERE_CLUSTER",
+      "datastore":"$VSPHERE_DATASTORE",
+      "folder": "$VSPHERE_TEMPLATE_FOLDER",
+      "network": "$VSPHERE_NETWORK",
+      "convert_to_template": "true"
+    }
+    EOF
+    kubectl create secret generic vsphere-credentials --from-file=vsphere.json
+    ```
+
+1.  Deploy the samples:
+
+    ```sh
+    kubectl apply --server-side -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/sample-with-job-template.yaml
+    ```
+
+1.  The controller will create a Job to build the image, after some time you should see the image in the vSphere UI.
+    Check the status of `KubernetesMachineImage` to see if the image was successfully built:
+
+    ```sh
+    kubectl get KubernetesMachineImage -o yaml
+    ```
+
+    You should see `status.ready` set to `true` and `spec.imageID` set to a newly created OVA template.
+
+## For Developers
+
+You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
+**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+
 ### Running on the cluster
 
-1.  Build and push your image to the location specified by `IMG`:
+1.  Generated the components manifests and build the image:
 
     ```sh
     make release-snapshot
@@ -37,19 +89,11 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
     make deploy IMG=ghcr.io/dkoshkin/kubernetes-upgrader:$(gojq -r '.version' dist/metadata.json)
     ```
 
-1.  Install Instances of Custom Resources:
+1.  Deploy the samples:
 
     ```sh
     kubectl apply -f config/samples/
     ```
-
-### Uninstall CRDs
-
-To delete the CRDs from the cluster:
-
-```sh
-make uninstall
-```
 
 ### Undeploy controller
 
@@ -59,32 +103,12 @@ UnDeploy the controller from the cluster:
 make undeploy
 ```
 
-## Contributing
-
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
 ### How it works
 
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
 
 It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
 which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
-
-### Test It Out
-
-1.  Install the CRDs into the cluster:
-
-    ```sh
-    make install
-    ```
-
-1.  Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
-
-    ```sh
-    make run
-    ```
-
-**NOTE:** You can also run this in one step by running: `make install run`
 
 ### Modifying the API definitions
 
