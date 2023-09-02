@@ -109,9 +109,9 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 
 .PHONY: release-manifests
 release-manifests: manifests kustomize ## Generate release manifests.
-	mkdir -p dist
+	mkdir -p out
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default > dist/components.yaml
+	$(KUSTOMIZE) build config/default > out/components.yaml
 	git checkout HEAD -- config/manager/kustomization.yaml
 
 .PHONY: undeploy
