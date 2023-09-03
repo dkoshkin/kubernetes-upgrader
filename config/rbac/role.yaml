@@ -17,6 +17,25 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
   - machineimages
@@ -38,6 +57,32 @@ rules:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
   - machineimages/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - plans
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - plans/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - plans/status
   verbs:
   - get
   - patch

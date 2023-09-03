@@ -51,7 +51,7 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
 1.  Deploy the samples:
 
     ```sh
-    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/sample-with-job-template.yaml
+    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/vsphere-with-job-template.yaml
     ```
 
 1.  The controller will create a Job to build the image, after some time you should see the image in the vSphere UI.
@@ -65,15 +65,9 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
 
 ## For Developers
 
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
-
-The controller deploys a webhook which requires a TLS certificate. The easiest way to get a certificate is to use [cert-manager](https://cert-manager.io/docs/installation/kubernetes/).
-You can deploy cert-manager using the following command:
-
-```sh
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.4/cert-manager.yaml
-```
+You’ll need a Kubernetes cluster to run against.
+Follow [CAPI's Quickstart documentation](https://cluster-api.sigs.k8s.io/user/quick-start.html) to create a cluster using [KIND](https://sigs.k8s.io/kind) and the Docker provider.
+Use Kubernetes version `v1.26.3` if you are planning on using the sample config.
 
 ### Running on the cluster
 
@@ -99,7 +93,7 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 1.  Deploy the samples:
 
     ```sh
-    kubectl apply -f config/samples/
+    kubectl apply -f config/samples/docker-static.yaml
     ```
 
 ### Undeploy controller
