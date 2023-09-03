@@ -35,9 +35,9 @@ type MachineImageSpec struct {
 	// Version is the version of the Kubernetes image to build
 	Version string `json:"version"`
 
-	// ImageID is the ID of the image that was built
+	// ID is the unique name or another identifier of the image that was built.
 	// +optional
-	ImageID string `json:"imageID,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// JobTemplate is the template for the job that builds the image
 	JobTemplate JobTemplate `json:"jobTemplate"`

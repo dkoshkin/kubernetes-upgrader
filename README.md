@@ -61,7 +61,7 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
     kubectl get MachineImage -o yaml
     ```
 
-    You should see `status.ready` set to `true` and `spec.imageID` set to a newly created OVA template.
+    You should see `status.ready` set to `true` and `spec.id` set to a newly created OVA template.
 
 ## For Developers
 
