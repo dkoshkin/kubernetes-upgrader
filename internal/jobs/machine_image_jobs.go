@@ -20,7 +20,7 @@ import (
 const (
 	ImageBuilderOwnedLabel = "image-builder.kubernetesupgraded.dimitrikoshkin.com/owned"
 
-	ImageIDAnnotation = "kubernetesupgraded.dimitrikoshkin.com/image-id"
+	IDAnnotation = "kubernetesupgraded.dimitrikoshkin.com/image-id"
 )
 
 type JobManager interface {
@@ -88,7 +88,7 @@ func (m *ImageBuilderJobManager) Status(
 		return nil, "", fmt.Errorf("failed to get image builder job: %w", err)
 	}
 
-	return &job.Status, job.Annotations[ImageIDAnnotation], nil
+	return &job.Status, job.Annotations[IDAnnotation], nil
 }
 
 func (m *ImageBuilderJobManager) Delete(

@@ -34,8 +34,8 @@ spec:
           spec:
             description: MachineImageSpec defines the desired state of MachineImage.
             properties:
-              imageID:
-                description: ImageID is the ID of the image that was built
+              id:
+                description: ID is the unique name or another identifier of the image that was built.
                 type: string
               jobTemplate:
                 description: JobTemplate is the template for the job that builds the

@@ -113,7 +113,7 @@ func (r *MachineImageReconciler) reconcileNormal(
 		return r.handleJob(ctx, logger, machineImage, jobs.NewJobManager(r.Client))
 	}
 
-	if machineImage.Spec.ImageID != "" {
+	if machineImage.Spec.ID != "" {
 		logger.Info("Image already built, nothing to do")
 		machineImage.Status.Ready = true
 		machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseCreated
@@ -152,7 +152,7 @@ func (r *MachineImageReconciler) handleJob(
 	jobManager jobs.JobManager,
 ) (ctrl.Result, error) {
 	logger.Info("Job reference set, checking status")
-	status, imageID, err := jobManager.Status(ctx, machineImage.Status.JobRef)
+	status, id, err := jobManager.Status(ctx, machineImage.Status.JobRef)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("Referenced Job not found, setting reference to nil to recreate")
@@ -169,15 +169,15 @@ func (r *MachineImageReconciler) handleJob(
 		machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseBuilding
 		return ctrl.Result{RequeueAfter: imageBuilderJobRequeueDelay}, nil
 	case status.Succeeded > 0:
-		if imageID == "" {
+		if id == "" {
 			logger.Info("Job succeeded but Image ID is empty, will not requeue")
 			//nolint:goerr113 // This is a user facing error.
 			return ctrl.Result{}, errors.New(
 				"job completed but image id is empty, delete the job to retry",
 			)
 		}
-		logger.Info(fmt.Sprintf("Job succeeded, updating with image id: %s", imageID))
-		machineImage.Spec.ImageID = imageID
+		logger.Info(fmt.Sprintf("Job succeeded, updating with image id: %s", id))
+		machineImage.Spec.ID = id
 		machineImage.Status.Ready = true
 		machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseCreated
 		return ctrl.Result{}, nil
