@@ -35,9 +35,9 @@ const (
 // log is for logging in this package.
 //
 //nolint:gochecknoglobals // This came from the Kubebuilder project.
-var kubernetesmachineimagelog = logf.Log.WithName("kubernetesmachineimage-resource")
+var machineimagelog = logf.Log.WithName("machineimage-resource")
 
-func (r *KubernetesMachineImage) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *MachineImage) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	//nolint:wrapcheck // This came from the Kubebuilder project.
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -46,13 +46,13 @@ func (r *KubernetesMachineImage) SetupWebhookWithManager(mgr ctrl.Manager) error
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 //nolint:lll // This is generated code.
-//+kubebuilder:webhook:path=/mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-kubernetesmachineimage,mutating=true,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=kubernetesmachineimages,verbs=create;update,versions=v1alpha1,name=mkubernetesmachineimage.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-machineimage,mutating=true,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages,verbs=create;update,versions=v1alpha1,name=mmachineimage.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &KubernetesMachineImage{}
+var _ webhook.Defaulter = &MachineImage{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (r *KubernetesMachineImage) Default() {
-	kubernetesmachineimagelog.Info("default", "name", r.Name)
+func (r *MachineImage) Default() {
+	machineimagelog.Info("default", "name", r.Name)
 
 	// inject the Kubernetes version into the job template spec
 	injectKubernetesVersionEnv(&r.Spec.JobTemplate.Spec, r.Spec.Version)
@@ -60,29 +60,29 @@ func (r *KubernetesMachineImage) Default() {
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //nolint:lll // This is generated code.
-//+kubebuilder:webhook:path=/validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-kubernetesmachineimage,mutating=false,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=kubernetesmachineimages,verbs=create;update,versions=v1alpha1,name=vkubernetesmachineimage.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-machineimage,mutating=false,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages,verbs=create;update,versions=v1alpha1,name=vmachineimage.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &KubernetesMachineImage{}
+var _ webhook.Validator = &MachineImage{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *KubernetesMachineImage) ValidateCreate() (admission.Warnings, error) {
-	kubernetesmachineimagelog.Info("validate create", "name", r.Name)
+func (r *MachineImage) ValidateCreate() (admission.Warnings, error) {
+	machineimagelog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *KubernetesMachineImage) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	kubernetesmachineimagelog.Info("validate update", "name", r.Name)
+func (r *MachineImage) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	machineimagelog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *KubernetesMachineImage) ValidateDelete() (admission.Warnings, error) {
-	kubernetesmachineimagelog.Info("validate delete", "name", r.Name)
+func (r *MachineImage) ValidateDelete() (admission.Warnings, error) {
+	machineimagelog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil, nil

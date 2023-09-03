@@ -27,8 +27,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// KubernetesMachineImageSpec defines the desired state of KubernetesMachineImage.
-type KubernetesMachineImageSpec struct {
+// MachineImageSpec defines the desired state of MachineImage.
+type MachineImageSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -49,8 +49,8 @@ type JobTemplate struct {
 	Spec corev1.PodSpec `json:"spec"`
 }
 
-// KubernetesMachineImageStatus defines the observed state of KubernetesMachineImage.
-type KubernetesMachineImageStatus struct {
+// MachineImageStatus defines the observed state of MachineImage.
+type MachineImageStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -61,7 +61,7 @@ type KubernetesMachineImageStatus struct {
 	// Phase represents the current phase of image building
 	// E.g. Building, Created, Failed.
 	// +optional
-	Phase KubernetesMachineImagePhase `json:"phase,omitempty"`
+	Phase MachineImagePhase `json:"phase,omitempty"`
 
 	// JobRef is a reference to the job that builds the image
 	// +optional
@@ -71,25 +71,25 @@ type KubernetesMachineImageStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// KubernetesMachineImage is the Schema for the kubernetesmachineimages API.
-type KubernetesMachineImage struct {
+// MachineImage is the Schema for the machineimages API.
+type MachineImage struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   KubernetesMachineImageSpec   `json:"spec,omitempty"`
-	Status KubernetesMachineImageStatus `json:"status,omitempty"`
+	Spec   MachineImageSpec   `json:"spec,omitempty"`
+	Status MachineImageStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// KubernetesMachineImageList contains a list of KubernetesMachineImage.
-type KubernetesMachineImageList struct {
+// MachineImageList contains a list of MachineImage.
+type MachineImageList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KubernetesMachineImage `json:"items"`
+	Items           []MachineImage `json:"items"`
 }
 
 //nolint:gochecknoinits // This is required for the Kubebuilder tooling.
 func init() {
-	SchemeBuilder.Register(&KubernetesMachineImage{}, &KubernetesMachineImageList{})
+	SchemeBuilder.Register(&MachineImage{}, &MachineImageList{})
 }

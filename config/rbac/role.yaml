@@ -19,7 +19,7 @@ rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - kubernetesmachineimages
+  - machineimages
   verbs:
   - create
   - delete
@@ -31,13 +31,13 @@ rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - kubernetesmachineimages/finalizers
+  - machineimages/finalizers
   verbs:
   - update
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - kubernetesmachineimages/status
+  - machineimages/status
   verbs:
   - get
   - patch

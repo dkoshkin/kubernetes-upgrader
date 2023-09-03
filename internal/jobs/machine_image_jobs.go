@@ -26,7 +26,7 @@ const (
 type JobManager interface {
 	Create(
 		ctx context.Context,
-		owner *kubernetesupgradedv1alpha1.KubernetesMachineImage,
+		owner *kubernetesupgradedv1alpha1.MachineImage,
 		spec *corev1.PodSpec,
 	) (*corev1.ObjectReference, error)
 	Status(ctx context.Context, ref *corev1.ObjectReference) (*batchv1.JobStatus, string, error)
@@ -43,7 +43,7 @@ func NewJobManager(client runtimeclient.Client) JobManager {
 
 func (m *ImageBuilderJobManager) Create(
 	ctx context.Context,
-	owner *kubernetesupgradedv1alpha1.KubernetesMachineImage,
+	owner *kubernetesupgradedv1alpha1.MachineImage,
 	spec *corev1.PodSpec,
 ) (*corev1.ObjectReference, error) {
 	job := &batchv1.Job{

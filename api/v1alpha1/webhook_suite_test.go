@@ -103,7 +103,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&KubernetesMachineImage{}).SetupWebhookWithManager(mgr)
+	err = (&MachineImage{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook

@@ -55,10 +55,10 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
     ```
 
 1.  The controller will create a Job to build the image, after some time you should see the image in the vSphere UI.
-    Check the status of `KubernetesMachineImage` to see if the image was successfully built:
+    Check the status of `MachineImage` to see if the image was successfully built:
 
     ```sh
-    kubectl get KubernetesMachineImage -o yaml
+    kubectl get MachineImage -o yaml
     ```
 
     You should see `status.ready` set to `true` and `spec.imageID` set to a newly created OVA template.

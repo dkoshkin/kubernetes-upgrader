@@ -116,15 +116,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.KubernetesMachineImageReconciler{
+	if err = (&controller.MachineImageReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "KubernetesMachineImage")
+		setupLog.Error(err, "unable to create controller", "controller", "MachineImage")
 		os.Exit(1)
 	}
-	if err = (&kubernetesupgradedv1alpha1.KubernetesMachineImage{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "KubernetesMachineImage")
+	if err = (&kubernetesupgradedv1alpha1.MachineImage{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "MachineImage")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
