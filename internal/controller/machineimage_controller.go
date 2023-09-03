@@ -42,16 +42,16 @@ const (
 	imageBuilderJobRequeueNow   = 1 * time.Second
 )
 
-// KubernetesMachineImageReconciler reconciles a KubernetesMachineImage object.
-type KubernetesMachineImageReconciler struct {
+// MachineImageReconciler reconciles a MachineImage object.
+type MachineImageReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
 //nolint:lll // This is generated code.
-//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=kubernetesmachineimages,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=kubernetesmachineimages/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=kubernetesmachineimages/finalizers,verbs=update
+//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages/finalizers,verbs=update
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -59,16 +59,16 @@ type KubernetesMachineImageReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
-func (r *KubernetesMachineImageReconciler) Reconcile(
+func (r *MachineImageReconciler) Reconcile(
 	ctx context.Context,
 	req ctrl.Request,
 ) (_ ctrl.Result, rerr error) {
 	logger := log.FromContext(ctx).
-		WithValues("kubernetesmachineimage", req.Name, "namespace", req.Namespace)
+		WithValues("machineimage", req.Name, "namespace", req.Namespace)
 
-	kubernetesMachineImage := &kubernetesupgradedv1alpha1.KubernetesMachineImage{}
-	if err := r.Get(ctx, req.NamespacedName, kubernetesMachineImage); err != nil {
-		logger.Error(err, "unable to fetch KubernetesMachineImage")
+	machineImage := &kubernetesupgradedv1alpha1.MachineImage{}
+	if err := r.Get(ctx, req.NamespacedName, machineImage); err != nil {
+		logger.Error(err, "unable to fetch MachineImage")
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
@@ -77,15 +77,15 @@ func (r *KubernetesMachineImageReconciler) Reconcile(
 	}
 
 	// Initialize the patch helper
-	patchHelper, err := patch.NewHelper(kubernetesMachineImage, r.Client)
+	patchHelper, err := patch.NewHelper(machineImage, r.Client)
 	if err != nil {
 		//nolint:wrapcheck // No additional context to add.
 		return ctrl.Result{}, err
 	}
 	// Always attempt to Patch the PreprovisionedMachine object and status after each reconciliation.
 	defer func() {
-		if err := patchKubernetesMachineImage(ctx, patchHelper, kubernetesMachineImage); err != nil {
-			logger.Error(err, "failed to patch KubernetesMachineImage")
+		if err := patchMachineImage(ctx, patchHelper, machineImage); err != nil {
+			logger.Error(err, "failed to patch MachineImage")
 			if rerr == nil {
 				rerr = err
 			}
@@ -93,70 +93,70 @@ func (r *KubernetesMachineImageReconciler) Reconcile(
 	}()
 
 	// Handle deleted clusters
-	if !kubernetesMachineImage.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, logger, kubernetesMachineImage)
+	if !machineImage.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, logger, machineImage)
 	}
 
 	// Handle non-deleted clusters
-	return r.reconcileNormal(ctx, logger, kubernetesMachineImage)
+	return r.reconcileNormal(ctx, logger, machineImage)
 }
 
-func (r *KubernetesMachineImageReconciler) reconcileNormal(
+func (r *MachineImageReconciler) reconcileNormal(
 	ctx context.Context,
 	logger logr.Logger,
-	kubernetesMachineImage *kubernetesupgradedv1alpha1.KubernetesMachineImage,
+	machineImage *kubernetesupgradedv1alpha1.MachineImage,
 ) (ctrl.Result, error) {
 	logger.Info("Reconciling normal")
 
 	logger.Info("Checking if job already exists")
-	if kubernetesMachineImage.Status.JobRef != nil {
-		return r.handleJob(ctx, logger, kubernetesMachineImage, jobs.NewJobManager(r.Client))
+	if machineImage.Status.JobRef != nil {
+		return r.handleJob(ctx, logger, machineImage, jobs.NewJobManager(r.Client))
 	}
 
-	if kubernetesMachineImage.Spec.ImageID != "" {
+	if machineImage.Spec.ImageID != "" {
 		logger.Info("Image already built, nothing to do")
-		kubernetesMachineImage.Status.Ready = true
-		kubernetesMachineImage.Status.Phase = kubernetesupgradedv1alpha1.KubernetesMachineImagePhaseCreated
+		machineImage.Status.Ready = true
+		machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseCreated
 		return ctrl.Result{}, nil
 	}
 
 	jobManager := jobs.NewJobManager(r.Client)
 
 	logger.Info("Job reference not set, creating a new job")
-	spec := &kubernetesMachineImage.Spec.JobTemplate.Spec
-	jobRef, err := jobManager.Create(ctx, kubernetesMachineImage, spec)
+	spec := &machineImage.Spec.JobTemplate.Spec
+	jobRef, err := jobManager.Create(ctx, machineImage, spec)
 	if err != nil {
 		//nolint:wrapcheck // No additional context to add.
 		return ctrl.Result{}, err
 	}
-	kubernetesMachineImage.Status.JobRef = jobRef
-	kubernetesMachineImage.Status.Phase = kubernetesupgradedv1alpha1.KubernetesMachineImagePhaseBuilding
+	machineImage.Status.JobRef = jobRef
+	machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseBuilding
 
 	return ctrl.Result{}, nil
 }
 
-func (r *KubernetesMachineImageReconciler) reconcileDelete(
+func (r *MachineImageReconciler) reconcileDelete(
 	_ context.Context,
 	logger logr.Logger,
-	_ *kubernetesupgradedv1alpha1.KubernetesMachineImage,
+	_ *kubernetesupgradedv1alpha1.MachineImage,
 ) (ctrl.Result, error) {
 	logger.Info("Reconciling delete")
 
 	return ctrl.Result{}, nil
 }
 
-func (r *KubernetesMachineImageReconciler) handleJob(
+func (r *MachineImageReconciler) handleJob(
 	ctx context.Context,
 	logger logr.Logger,
-	kubernetesMachineImage *kubernetesupgradedv1alpha1.KubernetesMachineImage,
+	machineImage *kubernetesupgradedv1alpha1.MachineImage,
 	jobManager jobs.JobManager,
 ) (ctrl.Result, error) {
 	logger.Info("Job reference set, checking status")
-	status, imageID, err := jobManager.Status(ctx, kubernetesMachineImage.Status.JobRef)
+	status, imageID, err := jobManager.Status(ctx, machineImage.Status.JobRef)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("Referenced Job not found, setting reference to nil to recreate")
-			kubernetesMachineImage.Status.JobRef = nil
+			machineImage.Status.JobRef = nil
 			return ctrl.Result{RequeueAfter: imageBuilderJobRequeueNow}, nil
 		}
 		//nolint:wrapcheck // No additional context to add.
@@ -166,7 +166,7 @@ func (r *KubernetesMachineImageReconciler) handleJob(
 	switch {
 	case status.Active > 0:
 		logger.Info("Job is still active, requeuing")
-		kubernetesMachineImage.Status.Phase = kubernetesupgradedv1alpha1.KubernetesMachineImagePhaseBuilding
+		machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseBuilding
 		return ctrl.Result{RequeueAfter: imageBuilderJobRequeueDelay}, nil
 	case status.Succeeded > 0:
 		if imageID == "" {
@@ -177,13 +177,13 @@ func (r *KubernetesMachineImageReconciler) handleJob(
 			)
 		}
 		logger.Info(fmt.Sprintf("Job succeeded, updating with image id: %s", imageID))
-		kubernetesMachineImage.Spec.ImageID = imageID
-		kubernetesMachineImage.Status.Ready = true
-		kubernetesMachineImage.Status.Phase = kubernetesupgradedv1alpha1.KubernetesMachineImagePhaseCreated
+		machineImage.Spec.ImageID = imageID
+		machineImage.Status.Ready = true
+		machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseCreated
 		return ctrl.Result{}, nil
 	case status.Failed > 0:
 		logger.Info("Job failed, will not requeue")
-		kubernetesMachineImage.Status.Phase = kubernetesupgradedv1alpha1.KubernetesMachineImagePhaseFailed
+		machineImage.Status.Phase = kubernetesupgradedv1alpha1.MachineImagePhaseFailed
 		//nolint:goerr113 // This is a user facing error.
 		return ctrl.Result{}, errors.New("job failed, delete the job to retry")
 	}
@@ -191,23 +191,23 @@ func (r *KubernetesMachineImageReconciler) handleJob(
 	return ctrl.Result{}, nil
 }
 
-func patchKubernetesMachineImage(
+func patchMachineImage(
 	ctx context.Context,
 	patchHelper *patch.Helper,
-	kubernetesMachineImage *kubernetesupgradedv1alpha1.KubernetesMachineImage,
+	machineImage *kubernetesupgradedv1alpha1.MachineImage,
 ) error {
 	// Patch the object, ignoring conflicts on the conditions owned by this controller.
 	//nolint:wrapcheck // This is generated code.
 	return patchHelper.Patch(
 		ctx,
-		kubernetesMachineImage,
+		machineImage,
 	)
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *KubernetesMachineImageReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MachineImageReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	//nolint:wrapcheck // This is generated code.
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&kubernetesupgradedv1alpha1.KubernetesMachineImage{}).
+		For(&kubernetesupgradedv1alpha1.MachineImage{}).
 		Complete(r)
 }

@@ -27,15 +27,15 @@ roleRef:
   apiGroup: ""
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
-kind: KubernetesMachineImage
+kind: MachineImage
 metadata:
   labels:
-    app.kubernetes.io/name: kubernetesmachineimage
-    app.kubernetes.io/instance: kubernetesmachineimage-sample
+    app.kubernetes.io/name: machineimage
+    app.kubernetes.io/instance: machineimage-sample
     app.kubernetes.io/part-of: kubernetes-upgrader
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: kubernetes-upgrader
-  name: kubernetesmachineimage-sample
+  name: machineimage-sample
 spec:
   version: v1.26.8
   jobTemplate:

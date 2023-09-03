@@ -4,21 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.0
-  name: kubernetesmachineimages.kubernetesupgraded.dimitrikoshkin.com
+  name: machineimages.kubernetesupgraded.dimitrikoshkin.com
 spec:
   group: kubernetesupgraded.dimitrikoshkin.com
   names:
-    kind: KubernetesMachineImage
-    listKind: KubernetesMachineImageList
-    plural: kubernetesmachineimages
-    singular: kubernetesmachineimage
+    kind: MachineImage
+    listKind: MachineImageList
+    plural: machineimages
+    singular: machineimage
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: KubernetesMachineImage is the Schema for the kubernetesmachineimages
-          API.
+        description: MachineImage is the Schema for the machineimages API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +32,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: KubernetesMachineImageSpec defines the desired state of KubernetesMachineImage.
+            description: MachineImageSpec defines the desired state of MachineImage.
             properties:
               imageID:
                 description: ImageID is the ID of the image that was built
@@ -7538,8 +7537,7 @@ spec:
             - version
             type: object
           status:
-            description: KubernetesMachineImageStatus defines the observed state of
-              KubernetesMachineImage.
+            description: MachineImageStatus defines the observed state of MachineImage.
             properties:
               jobRef:
                 description: JobRef is a reference to the job that builds the image

@@ -10,9 +10,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-kubernetesmachineimage
+      path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-machineimage
   failurePolicy: Fail
-  name: mkubernetesmachineimage.kb.io
+  name: mmachineimage.kb.io
   rules:
   - apiGroups:
     - kubernetesupgraded.dimitrikoshkin.com
@@ -22,7 +22,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - kubernetesmachineimages
+    - machineimages
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -36,9 +36,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-kubernetesmachineimage
+      path: /validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-machineimage
   failurePolicy: Fail
-  name: vkubernetesmachineimage.kb.io
+  name: vmachineimage.kb.io
   rules:
   - apiGroups:
     - kubernetesupgraded.dimitrikoshkin.com
@@ -48,5 +48,5 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - kubernetesmachineimages
+    - machineimages
   sideEffects: None

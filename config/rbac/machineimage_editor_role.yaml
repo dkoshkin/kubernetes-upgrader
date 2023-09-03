@@ -1,27 +1,31 @@
-# permissions for end users to view kubernetesmachineimages.
+# permissions for end users to edit machineimages.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: kubernetesmachineimage-viewer-role
+    app.kubernetes.io/instance: machineimage-editor-role
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: kubernetes-upgrader
     app.kubernetes.io/part-of: kubernetes-upgrader
     app.kubernetes.io/managed-by: kustomize
-  name: kubernetesmachineimage-viewer-role
+  name: machineimage-editor-role
 rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - kubernetesmachineimages
+  - machineimages
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - kubernetesmachineimages/status
+  - machineimages/status
   verbs:
   - get
