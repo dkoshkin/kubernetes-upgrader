@@ -1,0 +1,163 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.0
+  name: plans.kubernetesupgraded.dimitrikoshkin.com
+spec:
+  group: kubernetesupgraded.dimitrikoshkin.com
+  names:
+    categories:
+    - cluster-api
+    kind: Plan
+    listKind: PlanList
+    plural: plans
+    singular: plan
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.clusterName
+      name: Cluster Name
+      type: string
+    - jsonPath: .spec.versionRange
+      name: Version Range
+      type: string
+    - jsonPath: .status.latestVersion
+      name: Latest Version
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Plan is the Schema for the plans API.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PlanSpec defines the desired state of Plan.
+            properties:
+              clusterName:
+                description: ClusterName is the name of the cluster to upgrade.
+                minLength: 1
+                type: string
+              machineImagesLabelSelector:
+                description: MachineImageSelector can be used to select MachineImages
+                  to apply to the cluster plan. Defaults to the empty LabelSelector,
+                  which matches all objects.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              topologyVariable:
+                description: TopologyVariable is the name of the topology variable
+                  to set with the MachineImage's ID.
+                type: string
+              versionRange:
+                description: VersionRange gives a semver range of the Kubernetes version.
+                  The cluster will be upgraded to the highest version within the range.
+                minLength: 1
+                type: string
+            required:
+            - clusterName
+            - versionRange
+            type: object
+          status:
+            description: PlanStatus defines the observed state of Plan.
+            properties:
+              latestVersion:
+                description: LatestVersion is the highest version within the range
+                  that was found.
+                type: string
+              machineImageRef:
+                description: MachineImageRef is a reference to the MachineImage that
+                  was applied to the cluster upgrade.
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: 'If referring to a piece of an object instead of
+                      an entire object, this string should contain a valid JSON/Go
+                      field access statement, such as desiredState.manifest.containers[2].
+                      For example, if the object reference is to a container within
+                      a pod, this would take on a value like: "spec.containers{name}"
+                      (where "name" refers to the name of the container that triggered
+                      the event) or if no container name is specified "spec.containers[2]"
+                      (container with index 2 in this pod). This syntax is chosen
+                      only to have some well-defined way of referencing a part of
+                      an object. TODO: this design is not final and this field is
+                      subject to change in the future.'
+                    type: string
+                  kind:
+                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  namespace:
+                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    type: string
+                  resourceVersion:
+                    description: 'Specific resourceVersion to which this reference
+                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                    type: string
+                  uid:
+                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -27,13 +27,25 @@ roleRef:
   apiGroup: ""
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: Plan
+metadata:
+  labels:
+    app.kubernetes.io/name: plan
+    app.kubernetes.io/instance: plan-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: plan-sample
+spec:
+  clusterName: capi-quickstart
+  versionRange: v1.26.x
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
 kind: MachineImage
 metadata:
   labels:
     app.kubernetes.io/name: machineimage
     app.kubernetes.io/instance: machineimage-sample
     app.kubernetes.io/part-of: kubernetes-upgrader
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: kubernetes-upgrader
   name: machineimage-sample
 spec:

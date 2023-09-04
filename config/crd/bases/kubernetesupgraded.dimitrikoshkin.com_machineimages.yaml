@@ -8,13 +8,28 @@ metadata:
 spec:
   group: kubernetesupgraded.dimitrikoshkin.com
   names:
+    categories:
+    - cluster-api
     kind: MachineImage
     listKind: MachineImageList
     plural: machineimages
     singular: machineimage
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.id
+      name: ID
+      type: string
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    - jsonPath: .status.ready
+      name: Ready
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: MachineImage is the Schema for the machineimages API.
@@ -35,7 +50,8 @@ spec:
             description: MachineImageSpec defines the desired state of MachineImage.
             properties:
               id:
-                description: ID is the unique name or another identifier of the image that was built.
+                description: ID is the unique name or another identifier of the image
+                  that was built.
                 type: string
               jobTemplate:
                 description: JobTemplate is the template for the job that builds the
@@ -7531,6 +7547,7 @@ spec:
                 type: object
               version:
                 description: Version is the version of the Kubernetes image to build
+                minLength: 1
                 type: string
             required:
             - jobTemplate
@@ -7540,7 +7557,8 @@ spec:
             description: MachineImageStatus defines the observed state of MachineImage.
             properties:
               jobRef:
-                description: JobRef is a reference to the job that builds the image
+                description: JobRef is a reference to the job that built or is building
+                  the image.
                 properties:
                   apiVersion:
                     description: API version of the referent.

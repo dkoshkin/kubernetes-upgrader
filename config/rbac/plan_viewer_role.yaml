@@ -1,0 +1,27 @@
+# permissions for end users to view plans.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: plan-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kubernetes-upgrader
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/managed-by: kustomize
+  name: plan-viewer-role
+rules:
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - plans
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - plans/status
+  verbs:
+  - get

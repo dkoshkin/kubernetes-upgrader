@@ -33,6 +33,8 @@ type MachineImageSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Version is the version of the Kubernetes image to build
+	// +required
+	// +kubebuilder:validation:MinLength=1
 	Version string `json:"version"`
 
 	// ID is the unique name or another identifier of the image that was built.
@@ -40,6 +42,8 @@ type MachineImageSpec struct {
 	ID string `json:"id,omitempty"`
 
 	// JobTemplate is the template for the job that builds the image
+	// +required
+	// +kubebuilder:validation:Required
 	JobTemplate JobTemplate `json:"jobTemplate"`
 }
 
@@ -63,13 +67,18 @@ type MachineImageStatus struct {
 	// +optional
 	Phase MachineImagePhase `json:"phase,omitempty"`
 
-	// JobRef is a reference to the job that builds the image
+	// JobRef is a reference to the job that built or is building the image.
 	// +optional
 	JobRef *corev1.ObjectReference `json:"jobRef,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:categories=cluster-api
+//+kubebuilder:printcolumn:name="ID",type="string",JSONPath=`.spec.id`
+//+kubebuilder:printcolumn:name="Version",type="string",JSONPath=`.spec.version`
+//+kubebuilder:printcolumn:name="Ready",type="string",JSONPath=`.status.ready`
+//+kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 
 // MachineImage is the Schema for the machineimages API.
 type MachineImage struct {
@@ -78,6 +87,27 @@ type MachineImage struct {
 
 	Spec   MachineImageSpec   `json:"spec,omitempty"`
 	Status MachineImageStatus `json:"status,omitempty"`
+}
+
+// GetID returns the version of the MachineImage.
+func (r *MachineImage) GetID() string {
+	return r.Spec.ID
+}
+
+// GetVersion returns the version of the MachineImage.
+func (r *MachineImage) GetVersion() string {
+	return r.Spec.Version
+}
+
+func (r *MachineImage) GetObjectReference() *corev1.ObjectReference {
+	return &corev1.ObjectReference{
+		Kind:            r.Kind,
+		APIVersion:      r.APIVersion,
+		Namespace:       r.GetNamespace(),
+		Name:            r.GetName(),
+		UID:             r.GetUID(),
+		ResourceVersion: r.GetResourceVersion(),
+	}
 }
 
 //+kubebuilder:object:root=true

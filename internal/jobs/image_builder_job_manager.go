@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	kubernetesupgradedv1alpha1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
+	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 )
 
 const (
@@ -23,10 +23,10 @@ const (
 	IDAnnotation = "kubernetesupgraded.dimitrikoshkin.com/image-id"
 )
 
-type JobManager interface {
+type Manager interface {
 	Create(
 		ctx context.Context,
-		owner *kubernetesupgradedv1alpha1.MachineImage,
+		owner *kubernetesupgraderv1.MachineImage,
 		spec *corev1.PodSpec,
 	) (*corev1.ObjectReference, error)
 	Status(ctx context.Context, ref *corev1.ObjectReference) (*batchv1.JobStatus, string, error)
@@ -37,13 +37,13 @@ type ImageBuilderJobManager struct {
 	client runtimeclient.Client
 }
 
-func NewJobManager(client runtimeclient.Client) JobManager {
+func NewManager(client runtimeclient.Client) Manager {
 	return &ImageBuilderJobManager{client: client}
 }
 
 func (m *ImageBuilderJobManager) Create(
 	ctx context.Context,
-	owner *kubernetesupgradedv1alpha1.MachineImage,
+	owner *kubernetesupgraderv1.MachineImage,
 	spec *corev1.PodSpec,
 ) (*corev1.ObjectReference, error) {
 	job := &batchv1.Job{
