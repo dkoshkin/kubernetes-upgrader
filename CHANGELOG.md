@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 (2023-09-04)
+
+## What's Changed
+* chore: rename MachineImage API by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/28
+* chore: rename spec.ImageID to ID by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/30
+* chore(deps): Bump k8s.io/client-go from 0.27.2 to 0.27.5 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/33
+* chore(deps): Bump sigs.k8s.io/controller-runtime from 0.15.0 to 0.15.2 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/32
+* chore(deps): Bump sigs.k8s.io/cluster-api from 1.5.0 to 1.5.1 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/31
+* feat: support auto upgrading Clusters with a Plan type by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/36
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.2.1...v0.3.0
+
 ## 0.2.1 (2023-09-02)
 
 ## What's Changed
