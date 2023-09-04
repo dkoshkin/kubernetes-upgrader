@@ -43,7 +43,10 @@ type PlanSpec struct {
 	// +kubebuilder:validation:MinLength=1
 	VersionRange string `json:"versionRange"`
 
-	// TODO(dkoshkin): Add a label selector to select the MachineImages to use.
+	// MachineImageSelector can be used to select MachineImages to apply to the cluster plan.
+	// Defaults to the empty LabelSelector, which matches all objects.
+	// +optional
+	MachineImageSelector *metav1.LabelSelector `json:"machineImagesLabelSelector,omitempty"`
 
 	// TopologyVariable is the name of the topology variable to set with the MachineImage's ID.
 	// +optional

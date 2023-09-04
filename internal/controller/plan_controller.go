@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
@@ -240,12 +241,10 @@ func (r *PlanReconciler) latestMachineImageVersion(
 	logger logr.Logger,
 	plan *kubernetesupgraderv1.Plan,
 ) (policy.VersionedObject, error) {
-	// List all MachineImages in the same namespace as the Plan.
-	// TODO(dkoshkin): Use a label selector to filter MachineImages.
-	machineImages := &kubernetesupgraderv1.MachineImageList{}
-	err := r.List(ctx, machineImages, client.InNamespace(plan.Namespace))
+	logger.Info("Listing MachineImages for Plan")
+	machineImages, err := machineImagesForPlan(ctx, r.Client, plan)
 	if err != nil {
-		return nil, fmt.Errorf("unable to list MachineImages: %w", err)
+		return nil, fmt.Errorf("error listing MachineImages for Plan: %w", err)
 	}
 
 	// Filter all MachineImages that have an ID set.
@@ -267,6 +266,31 @@ func (r *PlanReconciler) latestMachineImageVersion(
 	}
 
 	return latestVersion, nil
+}
+
+func machineImagesForPlan(
+	ctx context.Context,
+	k8sClient client.Client,
+	plan *kubernetesupgraderv1.Plan,
+) (*kubernetesupgraderv1.MachineImageList, error) {
+	// List all MachineImages in the same namespace as the Plan.
+	machineImages := &kubernetesupgraderv1.MachineImageList{}
+
+	// Use the optional MachineImageSelector to filter the list of MachineImages.
+	selector, err := metav1.LabelSelectorAsSelector(plan.Spec.MachineImageSelector)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert MachineImageSelector to selector: %w", err)
+	}
+	opts := []client.ListOption{
+		client.InNamespace(plan.Namespace),
+		client.MatchingLabelsSelector{Selector: selector},
+	}
+	err = k8sClient.List(ctx, machineImages, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list MachineImages: %w", err)
+	}
+
+	return machineImages, nil
 }
 
 // createdMachineImages returns a list of MachineImages that have spec.ID set.
