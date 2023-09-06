@@ -91,7 +91,7 @@ func (r *MachineImageReconciler) Reconcile(
 		//nolint:wrapcheck // No additional context to add.
 		return ctrl.Result{}, err
 	}
-	// Always attempt to Patch the PreprovisionedMachine object and status after each reconciliation.
+	// Always attempt to Patch the MachineImage object and status after each reconciliation.
 	defer func() {
 		if err := patchMachineImage(ctx, patchHelper, machineImage); err != nil {
 			logger.Error(err, "failed to patch MachineImage")

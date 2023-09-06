@@ -64,6 +64,32 @@ rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
+  - machineimagesyncers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - machineimagesyncers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - machineimagesyncers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
   - plans
   verbs:
   - create

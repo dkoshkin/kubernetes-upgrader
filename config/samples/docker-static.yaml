@@ -44,6 +44,112 @@ spec:
       imageBuilderVersion: v1
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: MachineImageSyncer
+metadata:
+  labels:
+    app.kubernetes.io/name: machineimagesyncer
+    app.kubernetes.io/instance: machineimagesyncer-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: machineimagesyncer-sample
+spec:
+  versionRange: v1.27.x
+  template:
+    metadata:
+      labels:
+        imageBuilderVersion: v1
+    spec:
+      jobTemplate:
+        spec:
+          containers:
+            - name: output-writer
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - "/bin/bash"
+                - "-o"
+                - "xtrace" # Verbose output
+                - "-o"
+                - "errexit" # Exit on any error, except in a pipeline
+                - "-c"
+                - |
+                  kubectl annotate job \
+                    ${JOB_NAME} \
+                    -n ${JOB_NAMESPACE} \
+                    kubernetesupgraded.dimitrikoshkin.com/image-id="kindest/node:${KUBERNETES_VERSION}"
+              env:
+                - name: JOB_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.labels['job-name']
+                - name: JOB_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              volumeMounts:
+                - name: output
+                  mountPath: /tmp/output/
+          serviceAccountName: job-annotator-sa
+          volumes:
+            - name: vsphere-vars
+              secret:
+                secretName: image-builder-vsphere-vars
+            - name: output
+              emptyDir: {}
+          restartPolicy: Never
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: MachineImage
+metadata:
+  labels:
+    app.kubernetes.io/name: machineimage
+    app.kubernetes.io/instance: machineimage-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+    imageBuilderVersion: v1
+  name: machineimage-sample-1-28-1
+spec:
+  version: v1.28.1
+  jobTemplate:
+    spec:
+      containers:
+        - name: output-writer
+          image: bitnami/kubectl:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/bash"
+            - "-o"
+            - "xtrace" # Verbose output
+            - "-o"
+            - "errexit" # Exit on any error, except in a pipeline
+            - "-c"
+            - |
+              kubectl annotate job \
+                ${JOB_NAME} \
+                -n ${JOB_NAMESPACE} \
+                kubernetesupgraded.dimitrikoshkin.com/image-id="kindest/node:${KUBERNETES_VERSION}"
+          env:
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['job-name']
+            - name: JOB_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: output
+              mountPath: /tmp/output/
+      serviceAccountName: job-annotator-sa
+      volumes:
+        - name: vsphere-vars
+          secret:
+            secretName: image-builder-vsphere-vars
+        - name: output
+          emptyDir: {}
+      restartPolicy: Never
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
 kind: MachineImage
 metadata:
   labels:

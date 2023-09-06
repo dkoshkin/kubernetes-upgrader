@@ -23,8 +23,11 @@ spec:
     - jsonPath: .spec.versionRange
       name: Version Range
       type: string
-    - jsonPath: .status.latestVersion
-      name: Latest Version
+    - jsonPath: .status.latestFoundVersion
+      name: Latest Found Version
+      type: string
+    - jsonPath: .status.latestSetVersion
+      name: Latest Set Version
       type: string
     name: v1alpha1
     schema:
@@ -113,9 +116,13 @@ spec:
           status:
             description: PlanStatus defines the observed state of Plan.
             properties:
-              latestVersion:
-                description: LatestVersion is the highest version within the range
-                  that was found.
+              latestFoundVersion:
+                description: LatestFoundVersion is the highest version within the
+                  range that was found.
+                type: string
+              latestSetVersion:
+                description: LatestFoundVersion is the highest version within the
+                  range that was set on the Cluster.
                 type: string
               machineImageRef:
                 description: MachineImageRef is a reference to the MachineImage that

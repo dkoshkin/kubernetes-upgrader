@@ -31,6 +31,7 @@ repos:
         stages: [commit]
       - id: check-added-large-files
         stages: [commit]
+        exclude: ^config/crd/bases/
       - id: check-case-conflict
         stages: [commit]
       - id: check-merge-conflict
