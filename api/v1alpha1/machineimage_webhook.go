@@ -20,6 +20,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -68,7 +70,12 @@ var _ webhook.Validator = &MachineImage{}
 func (r *MachineImage) ValidateCreate() (admission.Warnings, error) {
 	machineimagelog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
+	if r.Spec.Version == "" {
+		return nil,
+			//nolint:goerr113 // This is a user facing error.
+			fmt.Errorf("spec.version: Required value")
+	}
+
 	return nil, nil
 }
 

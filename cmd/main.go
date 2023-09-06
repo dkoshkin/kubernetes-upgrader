@@ -51,6 +51,7 @@ func init() {
 	utilruntime.Must(clusterv1.AddToScheme(scheme))
 
 	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
+	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -136,6 +137,14 @@ func main() {
 		Recorder: mgr.GetEventRecorderFor("plan-reconciler"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Plan")
+		os.Exit(1)
+	}
+	if err = (&controller.MachineImageSyncerReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("machineimagesyncer-reconciler"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "MachineImageSyncer")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

@@ -33,9 +33,7 @@ type MachineImageSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Version is the version of the Kubernetes image to build
-	// +required
-	// +kubebuilder:validation:MinLength=1
-	Version string `json:"version"`
+	Version string `json:"version,omitempty"`
 
 	// ID is the unique name or another identifier of the image that was built.
 	// +optional

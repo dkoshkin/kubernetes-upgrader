@@ -30,4 +30,13 @@ resources:
   kind: Plan
   path: github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: dimitrikoshkin.com
+  group: kubernetesupgraded
+  kind: MachineImageSyncer
+  path: github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1
+  version: v1alpha1
 version: "3"

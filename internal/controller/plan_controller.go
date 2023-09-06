@@ -95,7 +95,7 @@ func (r *PlanReconciler) Reconcile(
 		//nolint:wrapcheck // No additional context to add.
 		return ctrl.Result{}, err
 	}
-	// Always attempt to Patch the PreprovisionedMachine object and status after each reconciliation.
+	// Always attempt to Patch the Plan object and status after each reconciliation.
 	defer func() {
 		if err := patchPlan(ctx, patchHelper, plan); err != nil {
 			logger.Error(err, "failed to patch Plan")
@@ -164,8 +164,8 @@ func (r *PlanReconciler) reconcileNormal(
 		return ctrl.Result{RequeueAfter: planRequeueDelay}, nil
 	}
 
-	// Update the status with the latest version.
-	plan.Status.LatestVersion = latestVersion.GetVersion()
+	// Update the status with the latest found version.
+	plan.Status.LatestFoundVersion = latestVersion.GetVersion()
 
 	// If the latest version is the same as the current version, there is nothing to do.
 	if cluster.Spec.Topology.Version == latestVersion.GetVersion() {
@@ -177,6 +177,8 @@ func (r *PlanReconciler) reconcileNormal(
 			"Cluster is already using the latest version %q",
 			latestVersion.GetVersion(),
 		)
+		// Update the status with the latest version set on the Cluster.
+		plan.Status.LatestSetVersion = latestVersion.GetVersion()
 		return ctrl.Result{}, nil
 	}
 
@@ -220,6 +222,8 @@ func (r *PlanReconciler) reconcileNormal(
 		return ctrl.Result{}, fmt.Errorf("error updating Cluster with a new version: %w", err)
 	}
 
+	// Update the status with the latest version set on the Cluster.
+	plan.Status.LatestSetVersion = latestVersion.GetVersion()
 	// Update the Plan status with the latest MachineImage.
 	plan.Status.MachineImageRef = latestVersion.GetObjectReference()
 

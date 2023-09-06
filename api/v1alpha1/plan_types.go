@@ -58,9 +58,13 @@ type PlanStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// LatestVersion is the highest version within the range that was found.
+	// LatestFoundVersion is the highest version within the range that was found.
 	// +optional
-	LatestVersion string `json:"latestVersion,omitempty"`
+	LatestFoundVersion string `json:"latestFoundVersion,omitempty"`
+
+	// LatestFoundVersion is the highest version within the range that was set on the Cluster.
+	// +optional
+	LatestSetVersion string `json:"latestSetVersion,omitempty"`
 
 	// MachineImageRef is a reference to the MachineImage that was applied to the cluster upgrade.
 	// +optional
@@ -72,7 +76,8 @@ type PlanStatus struct {
 //+kubebuilder:resource:categories=cluster-api
 //+kubebuilder:printcolumn:name="Cluster Name",type="string",JSONPath=`.spec.clusterName`
 //+kubebuilder:printcolumn:name="Version Range",type="string",JSONPath=`.spec.versionRange`
-//+kubebuilder:printcolumn:name="Latest Version",type="string",JSONPath=`.status.latestVersion`
+//+kubebuilder:printcolumn:name="Latest Found Version",type="string",JSONPath=`.status.latestFoundVersion`
+//+kubebuilder:printcolumn:name="Latest Set Version",type="string",JSONPath=`.status.latestSetVersion`
 
 // Plan is the Schema for the plans API.
 type Plan struct {
