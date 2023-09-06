@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 (2023-09-06)
+
+## What's Changed
+* feat: add MachineImageSyncer type with an initial test implementation by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/37
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.3.0...v0.4.0
+
 ## 0.3.0 (2023-09-04)
 
 ## What's Changed
