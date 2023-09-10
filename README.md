@@ -51,7 +51,7 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
 1.  Deploy the samples:
 
     ```sh
-    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/vsphere-with-job-template.yaml
+    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/example-vsphere-with-job-template.yaml
     ```
 
 1.  The controller will create a Job to build the image, after some time you should see the image in the vSphere UI.
@@ -93,7 +93,7 @@ Use Kubernetes version `v1.26.3` if you are planning on using the sample config.
 1.  Deploy the samples:
 
     ```sh
-    kubectl apply -f config/samples/docker-static.yaml
+    kubectl apply -f config/samples/example-docker-static.yaml
     ```
 
 ### Undeploy controller
