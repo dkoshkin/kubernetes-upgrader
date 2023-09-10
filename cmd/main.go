@@ -52,6 +52,7 @@ func init() {
 
 	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
 	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
+	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -145,6 +146,10 @@ func main() {
 		Recorder: mgr.GetEventRecorderFor("machineimagesyncer-reconciler"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MachineImageSyncer")
+		os.Exit(1)
+	}
+	if err = (&kubernetesupgraderv1.MachineImageSyncer{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "MachineImageSyncer")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

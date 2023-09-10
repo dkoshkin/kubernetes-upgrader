@@ -22,6 +22,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +38,12 @@ import (
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 )
 
+const (
+	machineImageSyncerGetTemplateRequeue        = 1 * time.Second
+	machineImageSyncerGetMachineImagesRequeue   = 1 * time.Minute
+	machineImageSyncerCreateMachineImageRequeue = 1 * time.Minute
+)
+
 // MachineImageSyncerReconciler reconciles a MachineImageSyncer object.
 type MachineImageSyncerReconciler struct {
 	client.Client
@@ -48,6 +55,7 @@ type MachineImageSyncerReconciler struct {
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimagesyncers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimagesyncers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimagesyncers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimagetemplates,verbs=get;list;watch
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -155,11 +163,31 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			err,
 		)
 		//nolint:wrapcheck // No additional context to add.
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: machineImageSyncerGetMachineImagesRequeue}, err
 	}
 
 	// Create a new MachineImage if none already exist for the given version
+	// FIXME(dkoshkin): Why are 2 MachineImages created?
 	if len(machineImages.Items) == 0 {
+		var machineImageTemplate *kubernetesupgraderv1.MachineImageTemplate
+		machineImageTemplate, err = machineImageSyncer.Spec.GetMachineImageTemplate(
+			ctx,
+			r.Client,
+			machineImageSyncer.Namespace,
+		)
+		if err != nil {
+			logger.Error(err, "unable to get MachineImageTemplate")
+			r.Recorder.Eventf(
+				machineImageSyncer,
+				corev1.EventTypeWarning,
+				"GetMachineImageTemplateFailed",
+				"Unable to get MachineImageTemplate for MachineImageSyncer",
+				err,
+			)
+			//nolint:wrapcheck // No additional context to add.
+			return ctrl.Result{RequeueAfter: machineImageSyncerGetTemplateRequeue}, err
+		}
+
 		objectMeta := metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-%s-", machineImageSyncer.Name, kubernetesVersion),
 			Namespace:    machineImageSyncer.Namespace,
@@ -177,11 +205,14 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 		if objectMeta.Annotations == nil {
 			objectMeta.Annotations = map[string]string{}
 		}
+		// Add an annotation to the MachineImage to indicate which MachineImageTemplate it was cloned from
+		objectMeta.Annotations["kubernetesupgraded.dimitrikoshkin.com/cloned-from-name"] = machineImageTemplate.Name
+
 		// TODO(dkoshkin): This probably has some upstream utility
-		for k, v := range machineImageSyncer.Spec.Template.ObjectMeta.Labels {
+		for k, v := range machineImageTemplate.ObjectMeta.Labels {
 			objectMeta.Labels[k] = v
 		}
-		for k, v := range machineImageSyncer.Spec.Template.ObjectMeta.Annotations {
+		for k, v := range machineImageTemplate.ObjectMeta.Annotations {
 			objectMeta.Annotations[k] = v
 		}
 
@@ -189,7 +220,7 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			ObjectMeta: objectMeta,
 			Spec: kubernetesupgraderv1.MachineImageSpec{
 				Version:     kubernetesVersion,
-				JobTemplate: machineImageSyncer.Spec.Template.Spec.JobTemplate,
+				JobTemplate: machineImageTemplate.Spec.Template.Spec.JobTemplate,
 			},
 		}
 		err = r.Create(ctx, machineImage)
@@ -204,7 +235,7 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 				err,
 			)
 			//nolint:wrapcheck // No additional context to add.
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: machineImageSyncerCreateMachineImageRequeue}, err
 		}
 
 		r.Recorder.Eventf(

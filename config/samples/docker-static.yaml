@@ -33,7 +33,6 @@ metadata:
     app.kubernetes.io/name: plan
     app.kubernetes.io/instance: plan-sample
     app.kubernetes.io/part-of: kubernetes-upgrader
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: kubernetes-upgrader
   name: plan-sample
 spec:
@@ -44,16 +43,15 @@ spec:
       imageBuilderVersion: v1
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
-kind: MachineImageSyncer
+kind: MachineImageTemplate
 metadata:
   labels:
-    app.kubernetes.io/name: machineimagesyncer
-    app.kubernetes.io/instance: machineimagesyncer-sample
+    app.kubernetes.io/name: machineimagetemplate
+    app.kubernetes.io/instance: machineimagetemplate-sample
     app.kubernetes.io/part-of: kubernetes-upgrader
     app.kubernetes.io/created-by: kubernetes-upgrader
-  name: machineimagesyncer-sample
+  name: machineimagetemplate-sample
 spec:
-  versionRange: v1.27.x
   template:
     metadata:
       labels:
@@ -97,6 +95,20 @@ spec:
             - name: output
               emptyDir: {}
           restartPolicy: Never
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: MachineImageSyncer
+metadata:
+  labels:
+    app.kubernetes.io/name: machineimagesyncer
+    app.kubernetes.io/instance: machineimagesyncer-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: machineimagesyncer-sample
+spec:
+  versionRange: v1.27.x
+  machineImageTemplateRef:
+    name: machineimagetemplate-sample
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
 kind: MachineImage
