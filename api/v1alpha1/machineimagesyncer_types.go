@@ -20,8 +20,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -38,21 +42,27 @@ type MachineImageSyncerSpec struct {
 	// +kubebuilder:validation:MinLength=1
 	VersionRange string `json:"versionRange"`
 
-	// Template is the MachineImage template to use when building the image.
+	// MachineImageTemplateRef is a reference to a MachineImageTemplate object.
 	// +required
-	Template MachineImageSyncerResource `json:"template"`
+	MachineImageTemplateRef corev1.ObjectReference `json:"machineImageTemplateRef"`
 }
 
-// MachineImageSyncerResource defines the Template structure.
-type MachineImageSyncerResource struct {
-	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-	// +optional
-	ObjectMeta clusterv1.ObjectMeta `json:"metadata,omitempty"`
+func (s *MachineImageSyncerSpec) GetMachineImageTemplate(
+	ctx context.Context,
+	r client.Reader,
+	namespace string,
+) (*MachineImageTemplate, error) {
+	machineImageTemplate := &MachineImageTemplate{}
+	key := client.ObjectKey{
+		Name:      s.MachineImageTemplateRef.Name,
+		Namespace: s.MachineImageTemplateRef.Namespace,
+	}
+	err := r.Get(ctx, key, machineImageTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("error getting MachineImageTemplate for MachineImageSyncer: %w", err)
+	}
 
-	// Spec is the MachineImage spec to use when building the image.
-	// +required
-	Spec MachineImageSpec `json:"spec"`
+	return machineImageTemplate, nil
 }
 
 // MachineImageSyncerStatus defines the observed state of MachineImageSyncer.
