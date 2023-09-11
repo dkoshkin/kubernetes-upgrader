@@ -50,7 +50,6 @@ type MachineImageSyncerSpec struct {
 func (s *MachineImageSyncerSpec) GetMachineImageTemplate(
 	ctx context.Context,
 	r client.Reader,
-	namespace string,
 ) (*MachineImageTemplate, error) {
 	machineImageTemplate := &MachineImageTemplate{}
 	key := client.ObjectKey{
