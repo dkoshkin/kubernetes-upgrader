@@ -25,10 +25,13 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,6 +45,13 @@ const (
 	machineImageSyncerGetTemplateRequeue        = 1 * time.Second
 	machineImageSyncerGetMachineImagesRequeue   = 1 * time.Minute
 	machineImageSyncerCreateMachineImageRequeue = 1 * time.Minute
+)
+
+const (
+	MachineImageSyncerNameLabel              = "kubernetes-upgrader.dimitrikoshkin.com/machine-image-syncer-name"
+	MachineImageSyncerKubernetesVersionLabel = "kubernetes-upgrader.dimitrikoshkin.com/kubernetes-version"
+
+	TemplateClonedFromNameAnnotation = "kubernetes-upgrader.dimitrikoshkin.com/cloned-from"
 )
 
 // MachineImageSyncerReconciler reconciles a MachineImageSyncer object.
@@ -126,12 +136,8 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 	kubernetesVersion := "v1.27.5"
 
 	labels := map[string]string{
-		// TODO(dkoshkin): Do all these labels make sense?
-		"app.kubernetes.io/name":       "machineimage",
-		"app.kubernetes.io/instance":   machineImageSyncer.Name,
-		"app.kubernetes.io/part-of":    "kubernetes-upgrader",
-		"app.kubernetes.io/created-by": "kubernetes-upgrader",
-		"kubernetesVersion":            kubernetesVersion,
+		MachineImageSyncerNameLabel:              machineImageSyncer.Name,
+		MachineImageSyncerKubernetesVersionLabel: kubernetesVersion,
 	}
 	machineImages := &kubernetesupgraderv1.MachineImageList{}
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
@@ -153,12 +159,12 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 	}
 	err = r.List(ctx, machineImages, opts...)
 	if err != nil {
-		logger.Error(err, "unable to list MachineImages for version %s")
+		logger.Error(err, "unable to list MachineImages", "version", kubernetesVersion)
 		r.Recorder.Eventf(
 			machineImageSyncer,
 			corev1.EventTypeWarning,
 			"ListMachineImageFailed",
-			"Unable list MachineImage for version %s",
+			"Unable list MachineImage for Kubernetes version %s",
 			kubernetesVersion,
 			err,
 		)
@@ -167,14 +173,9 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 	}
 
 	// Create a new MachineImage if none already exist for the given version
-	// FIXME(dkoshkin): Why are 2 MachineImages created?
 	if len(machineImages.Items) == 0 {
 		var machineImageTemplate *kubernetesupgraderv1.MachineImageTemplate
-		machineImageTemplate, err = machineImageSyncer.Spec.GetMachineImageTemplate(
-			ctx,
-			r.Client,
-			machineImageSyncer.Namespace,
-		)
+		machineImageTemplate, err = machineImageSyncer.Spec.GetMachineImageTemplate(ctx, r.Client)
 		if err != nil {
 			logger.Error(err, "unable to get MachineImageTemplate")
 			r.Recorder.Eventf(
@@ -192,7 +193,7 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			GenerateName: fmt.Sprintf("%s-%s-", machineImageSyncer.Name, kubernetesVersion),
 			Namespace:    machineImageSyncer.Namespace,
 			Labels:       labels,
-			// TODO(dkoshkin): Do we want to delete the MachinreImage objects when MachineImageSyncer is deleted?
+			// TODO(dkoshkin): Do we want to delete the MachineImage objects when MachineImageSyncer is deleted?
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: machineImageSyncer.APIVersion,
@@ -206,13 +207,13 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			objectMeta.Annotations = map[string]string{}
 		}
 		// Add an annotation to the MachineImage to indicate which MachineImageTemplate it was cloned from
-		objectMeta.Annotations["kubernetesupgraded.dimitrikoshkin.com/cloned-from-name"] = machineImageTemplate.Name
+		objectMeta.Annotations[TemplateClonedFromNameAnnotation] = machineImageTemplate.Name
 
-		// TODO(dkoshkin): This probably has some upstream utility
-		for k, v := range machineImageTemplate.ObjectMeta.Labels {
+		// TODO(dkoshkin): Check for an upstream utility
+		for k, v := range machineImageTemplate.Spec.Template.ObjectMeta.Labels {
 			objectMeta.Labels[k] = v
 		}
-		for k, v := range machineImageTemplate.ObjectMeta.Annotations {
+		for k, v := range machineImageTemplate.Spec.Template.ObjectMeta.Annotations {
 			objectMeta.Annotations[k] = v
 		}
 
@@ -223,31 +224,78 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 				JobTemplate: machineImageTemplate.Spec.Template.Spec.JobTemplate,
 			},
 		}
-		err = r.Create(ctx, machineImage)
-		if err != nil {
-			logger.Error(err, "unable to create MachineImage for version %s")
-			r.Recorder.Eventf(
-				machineImageSyncer,
-				corev1.EventTypeWarning,
-				"CreateMachineImageFailed",
-				"Unable create MachineImage for version %s",
-				kubernetesVersion,
-				err,
-			)
-			//nolint:wrapcheck // No additional context to add.
-			return ctrl.Result{RequeueAfter: machineImageSyncerCreateMachineImageRequeue}, err
-		}
+		return r.createMachineImageAndWait(ctx, logger, machineImageSyncer, machineImage)
+	}
 
+	return ctrl.Result{}, nil
+}
+
+// createMachineImageAndWait creates a new MachineImage.
+// It waits for the cache to be updated with the newly created MachineImage.
+//
+//nolint:funlen // TODO(dkoshkin): Refactor to a shorter functions.
+func (r *MachineImageSyncerReconciler) createMachineImageAndWait(
+	ctx context.Context,
+	logger logr.Logger,
+	machineImageSyncer *kubernetesupgraderv1.MachineImageSyncer,
+	machineImage *kubernetesupgraderv1.MachineImage,
+) (ctrl.Result, error) {
+	kubernetesVersion := machineImage.Spec.Version
+	err := r.Create(ctx, machineImage)
+	if err != nil {
+		logger.Error(err, "unable to create MachineImage", "version", kubernetesVersion)
 		r.Recorder.Eventf(
 			machineImageSyncer,
-			corev1.EventTypeNormal,
-			"CreatedMachineImage",
-			"Created MachineImage %q for version %s",
-			machineImage.Name,
+			corev1.EventTypeWarning,
+			"CreateMachineImageFailed",
+			"Unable create MachineImage for Kubernetes version %s",
 			kubernetesVersion,
+			err,
 		)
-		machineImageSyncer.Status.LatestVersion = kubernetesVersion
+		//nolint:wrapcheck // No additional context to add.
+		return ctrl.Result{RequeueAfter: machineImageSyncerCreateMachineImageRequeue}, err
 	}
+
+	logger.Info("Waiting for MachineImage to be created", "version", kubernetesVersion)
+	// Keep trying to get the MachineImage.
+	// This will force the cache to update and prevent any future reconciliation of the MachineImageSyncer
+	// to reconcile with an outdated list of MachineImage,
+	// which could lead to unwanted creation of a duplicate MachineImage.
+	const (
+		interval = 100 * time.Millisecond
+		timeout  = 10 * time.Second
+	)
+	var pollErrors []error
+	if err = wait.PollUntilContextTimeout(
+		ctx, interval, timeout, true, func(ctx context.Context) (bool, error) {
+			if err = r.Client.Get(
+				ctx,
+				client.ObjectKeyFromObject(machineImage),
+				&kubernetesupgraderv1.MachineImage{},
+			); err != nil {
+				// Do not return error here. Continue to poll even if we hit an error
+				// so that we avoid exiting because of transient errors like network flakes.
+				// Capture all the errors and return the aggregate error if the poll fails eventually.
+				pollErrors = append(pollErrors, err)
+				return false, nil
+			}
+			return true, nil
+		}); err != nil {
+		return ctrl.Result{},
+			errors.Wrapf(
+				kerrors.NewAggregate(pollErrors),
+				"failed to get the MachineImage %s after creation", machineImage.Name)
+	}
+
+	r.Recorder.Eventf(
+		machineImageSyncer,
+		corev1.EventTypeNormal,
+		"CreatedMachineImage",
+		"Created MachineImage %q for Kubernetes version %s",
+		machineImage.Name,
+		kubernetesVersion,
+	)
+	machineImageSyncer.Status.LatestVersion = kubernetesVersion
 
 	return ctrl.Result{}, nil
 }
