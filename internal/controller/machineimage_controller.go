@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,7 +34,9 @@ import (
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 	"github.com/dkoshkin/kubernetes-upgrader/internal/jobs"
@@ -189,6 +192,7 @@ func (r *MachineImageReconciler) handleJob(
 	case status.Active > 0:
 		logger.Info("Job is still active, requeuing")
 		machineImage.Status.Phase = kubernetesupgraderv1.MachineImagePhaseBuilding
+		// Already watching Jobs, but force a requeue to limit the maximum time to wait.
 		return ctrl.Result{RequeueAfter: imageBuilderJobRequeueDelay}, nil
 	case status.Succeeded > 0:
 		if id == "" {
@@ -231,5 +235,34 @@ func (r *MachineImageReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	//nolint:wrapcheck // This is generated code.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubernetesupgraderv1.MachineImage{}).
+		Watches(
+			&batchv1.Job{},
+			handler.EnqueueRequestsFromMapFunc(r.jobMapper),
+		).
 		Complete(r)
+}
+
+// jobMapper generates reconcile requests for every Job associated with a MachineImage.
+func (r *MachineImageReconciler) jobMapper(
+	ctx context.Context,
+	o client.Object,
+) []reconcile.Request {
+	job, ok := o.(*batchv1.Job)
+	logger := log.FromContext(ctx).
+		WithValues("job", job.Name, "namespace", job.Namespace)
+
+	if !ok {
+		//nolint:goerr113 // This is a user facing error.
+		logger.Error(fmt.Errorf("expected a Job but got a %T", job), "failed to reconcile object")
+		return nil
+	}
+
+	result := []ctrl.Request{}
+	for _, owner := range job.GetOwnerReferences() {
+		if owner.Kind == "MachineImage" {
+			key := client.ObjectKey{Namespace: o.GetNamespace(), Name: owner.Name}
+			result = append(result, ctrl.Request{NamespacedName: key})
+		}
+	}
+	return result
 }
