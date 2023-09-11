@@ -135,29 +135,17 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 	// FIXME(dkoshkin): Implement fetching packages from a source
 	kubernetesVersion := "v1.27.5"
 
+	// These labels will be used to find MachineImages created by this MachineImageSyncer.
 	labels := map[string]string{
 		MachineImageSyncerNameLabel:              machineImageSyncer.Name,
 		MachineImageSyncerKubernetesVersionLabel: kubernetesVersion,
 	}
-	machineImages := &kubernetesupgraderv1.MachineImageList{}
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
-	if err != nil {
-		logger.Error(err, "unable to convert labels to selector")
-		r.Recorder.Eventf(
-			machineImageSyncer,
-			corev1.EventTypeWarning,
-			"ConvertLabelsToSelectorFailed",
-			"Unable to convert labels to selector",
-			err,
-		)
-		//nolint:wrapcheck // No additional context to add.
-		return ctrl.Result{}, err
-	}
-	opts := []client.ListOption{
-		client.InNamespace(machineImageSyncer.Namespace),
-		client.MatchingLabelsSelector{Selector: selector},
-	}
-	err = r.List(ctx, machineImages, opts...)
+	machineImages, err := listMachineImagesWithLabels(
+		ctx,
+		r.Client,
+		machineImageSyncer.Namespace,
+		labels,
+	)
 	if err != nil {
 		logger.Error(err, "unable to list MachineImages", "version", kubernetesVersion)
 		r.Recorder.Eventf(
@@ -168,7 +156,7 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			kubernetesVersion,
 			err,
 		)
-		//nolint:wrapcheck // No additional context to add.
+
 		return ctrl.Result{RequeueAfter: machineImageSyncerGetMachineImagesRequeue}, err
 	}
 
@@ -189,59 +177,98 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			return ctrl.Result{RequeueAfter: machineImageSyncerGetTemplateRequeue}, err
 		}
 
-		objectMeta := metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("%s-%s-", machineImageSyncer.Name, kubernetesVersion),
-			Namespace:    machineImageSyncer.Namespace,
-			Labels:       labels,
-			// TODO(dkoshkin): Do we want to delete the MachineImage objects when MachineImageSyncer is deleted?
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: machineImageSyncer.APIVersion,
-					Kind:       machineImageSyncer.Kind,
-					Name:       machineImageSyncer.Name,
-					UID:        machineImageSyncer.UID,
-				},
-			},
-		}
-		if objectMeta.Annotations == nil {
-			objectMeta.Annotations = map[string]string{}
-		}
-		// Add an annotation to the MachineImage to indicate which MachineImageTemplate it was cloned from
-		objectMeta.Annotations[TemplateClonedFromNameAnnotation] = machineImageTemplate.Name
-
-		// TODO(dkoshkin): Check for an upstream utility
-		for k, v := range machineImageTemplate.Spec.Template.ObjectMeta.Labels {
-			objectMeta.Labels[k] = v
-		}
-		for k, v := range machineImageTemplate.Spec.Template.ObjectMeta.Annotations {
-			objectMeta.Annotations[k] = v
-		}
-
-		machineImage := &kubernetesupgraderv1.MachineImage{
-			ObjectMeta: objectMeta,
-			Spec: kubernetesupgraderv1.MachineImageSpec{
-				Version:     kubernetesVersion,
-				JobTemplate: machineImageTemplate.Spec.Template.Spec.JobTemplate,
-			},
-		}
-		return r.createMachineImageAndWait(ctx, logger, machineImageSyncer, machineImage)
+		// Build a new MachineImage for the given version.
+		machineImage := machineImageForKubernetesVersion(
+			machineImageSyncer,
+			machineImageTemplate,
+			labels,
+			kubernetesVersion,
+		)
+		return r.reconcileCreateMachineImageAndWait(ctx, logger, machineImageSyncer, machineImage)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-// createMachineImageAndWait creates a new MachineImage.
-// It waits for the cache to be updated with the newly created MachineImage.
+func listMachineImagesWithLabels(
+	ctx context.Context,
+	k8sClient client.Client,
+	namespace string,
+	labels map[string]string,
+) (*kubernetesupgraderv1.MachineImageList, error) {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
+	if err != nil {
+		return nil, fmt.Errorf("error converting labels to selector: %w", err)
+	}
+
+	machineImages := &kubernetesupgraderv1.MachineImageList{}
+	opts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingLabelsSelector{Selector: selector},
+	}
+	err = k8sClient.List(ctx, machineImages, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list MachineImages with labels %v: %w", labels, err)
+	}
+
+	return machineImages, nil
+}
+
+func machineImageForKubernetesVersion(
+	machineImageSyncer *kubernetesupgraderv1.MachineImageSyncer,
+	machineImageTemplate *kubernetesupgraderv1.MachineImageTemplate,
+	labels map[string]string,
+	kubernetesVersion string,
+) *kubernetesupgraderv1.MachineImage {
+	objectMeta := metav1.ObjectMeta{
+		GenerateName: fmt.Sprintf("%s-%s-", machineImageSyncer.Name, kubernetesVersion),
+		Namespace:    machineImageSyncer.Namespace,
+		Labels:       labels,
+		// TODO(dkoshkin): Do we want to delete the MachineImage objects when MachineImageSyncer is deleted?
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				APIVersion: machineImageSyncer.APIVersion,
+				Kind:       machineImageSyncer.Kind,
+				Name:       machineImageSyncer.Name,
+				UID:        machineImageSyncer.UID,
+			},
+		},
+	}
+	if objectMeta.Annotations == nil {
+		objectMeta.Annotations = map[string]string{}
+	}
+	// Add an annotation to the MachineImage to indicate which MachineImageTemplate it was cloned from
+	objectMeta.Annotations[TemplateClonedFromNameAnnotation] = machineImageTemplate.Name
+
+	// TODO(dkoshkin): Check for an upstream utility
+	for k, v := range machineImageTemplate.Spec.Template.ObjectMeta.Labels {
+		objectMeta.Labels[k] = v
+	}
+	for k, v := range machineImageTemplate.Spec.Template.ObjectMeta.Annotations {
+		objectMeta.Annotations[k] = v
+	}
+
+	machineImage := &kubernetesupgraderv1.MachineImage{
+		ObjectMeta: objectMeta,
+		Spec: kubernetesupgraderv1.MachineImageSpec{
+			Version:     kubernetesVersion,
+			JobTemplate: machineImageTemplate.Spec.Template.Spec.JobTemplate,
+		},
+	}
+
+	return machineImage
+}
+
 //
-//nolint:funlen // TODO(dkoshkin): Refactor to a shorter functions.
-func (r *MachineImageSyncerReconciler) createMachineImageAndWait(
+
+func (r *MachineImageSyncerReconciler) reconcileCreateMachineImageAndWait(
 	ctx context.Context,
 	logger logr.Logger,
 	machineImageSyncer *kubernetesupgraderv1.MachineImageSyncer,
 	machineImage *kubernetesupgraderv1.MachineImage,
 ) (ctrl.Result, error) {
 	kubernetesVersion := machineImage.Spec.Version
-	err := r.Create(ctx, machineImage)
+	err := createMachineImageAndWait(ctx, r.Client, machineImage)
 	if err != nil {
 		logger.Error(err, "unable to create MachineImage", "version", kubernetesVersion)
 		r.Recorder.Eventf(
@@ -252,39 +279,8 @@ func (r *MachineImageSyncerReconciler) createMachineImageAndWait(
 			kubernetesVersion,
 			err,
 		)
-		//nolint:wrapcheck // No additional context to add.
-		return ctrl.Result{RequeueAfter: machineImageSyncerCreateMachineImageRequeue}, err
-	}
 
-	logger.Info("Waiting for MachineImage to be created", "version", kubernetesVersion)
-	// Keep trying to get the MachineImage.
-	// This will force the cache to update and prevent any future reconciliation of the MachineImageSyncer
-	// to reconcile with an outdated list of MachineImage,
-	// which could lead to unwanted creation of a duplicate MachineImage.
-	const (
-		interval = 100 * time.Millisecond
-		timeout  = 10 * time.Second
-	)
-	var pollErrors []error
-	if err = wait.PollUntilContextTimeout(
-		ctx, interval, timeout, true, func(ctx context.Context) (bool, error) {
-			if err = r.Client.Get(
-				ctx,
-				client.ObjectKeyFromObject(machineImage),
-				&kubernetesupgraderv1.MachineImage{},
-			); err != nil {
-				// Do not return error here. Continue to poll even if we hit an error
-				// so that we avoid exiting because of transient errors like network flakes.
-				// Capture all the errors and return the aggregate error if the poll fails eventually.
-				pollErrors = append(pollErrors, err)
-				return false, nil
-			}
-			return true, nil
-		}); err != nil {
-		return ctrl.Result{},
-			errors.Wrapf(
-				kerrors.NewAggregate(pollErrors),
-				"failed to get the MachineImage %s after creation", machineImage.Name)
+		return ctrl.Result{RequeueAfter: machineImageSyncerCreateMachineImageRequeue}, err
 	}
 
 	r.Recorder.Eventf(
@@ -298,6 +294,51 @@ func (r *MachineImageSyncerReconciler) createMachineImageAndWait(
 	machineImageSyncer.Status.LatestVersion = kubernetesVersion
 
 	return ctrl.Result{}, nil
+}
+
+// createMachineImageFAndWait creates a new MachineImage.
+// It waits for the cache to be updated with the newly created MachineImage.
+func createMachineImageAndWait(
+	ctx context.Context,
+	k8sClient client.Client,
+	machineImage *kubernetesupgraderv1.MachineImage,
+) error {
+	err := k8sClient.Create(ctx, machineImage)
+	if err != nil {
+		return fmt.Errorf("error creating MachineImage: %w", err)
+	}
+
+	// Keep trying to get the MachineImage.
+	// This will force the cache to update and prevent any future reconciliation of the MachineImageSyncer
+	// to reconcile with an outdated list of MachineImage,
+	// which could lead to unwanted creation of a duplicate MachineImage.
+	const (
+		interval = 100 * time.Millisecond
+		timeout  = 10 * time.Second
+	)
+	var pollErrors []error
+	if err = wait.PollUntilContextTimeout(
+		ctx, interval, timeout, true, func(ctx context.Context) (bool, error) {
+			if err = k8sClient.Get(
+				ctx,
+				client.ObjectKeyFromObject(machineImage),
+				&kubernetesupgraderv1.MachineImage{},
+			); err != nil {
+				// Do not return error here. Continue to poll even if we hit an error
+				// so that we avoid exiting because of transient errors like network flakes.
+				// Capture all the errors and return the aggregate error if the poll fails eventually.
+				pollErrors = append(pollErrors, err)
+				return false, nil
+			}
+			return true, nil
+		}); err != nil {
+		return errors.Wrapf(
+			kerrors.NewAggregate(pollErrors),
+			"failed to get the MachineImage %s after creation", machineImage.Name,
+		)
+	}
+
+	return nil
 }
 
 func (r *MachineImageSyncerReconciler) reconcileDelete(
