@@ -22,6 +22,8 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/dkoshkin/kubernetes-upgrader/internal/policy"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -88,14 +90,21 @@ type MachineImage struct {
 }
 
 // GetID returns the version of the MachineImage.
+//
+
 func (r *MachineImage) GetID() string {
 	return r.Spec.ID
 }
 
 // GetVersion returns the version of the MachineImage.
+//
+
 func (r *MachineImage) GetVersion() string {
 	return r.Spec.Version
 }
+
+// GetObjectReference returns a Kubernetes ObjectReference for this object.
+//
 
 func (r *MachineImage) GetObjectReference() *corev1.ObjectReference {
 	return &corev1.ObjectReference{
@@ -115,6 +124,14 @@ type MachineImageList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []MachineImage `json:"items"`
+}
+
+func MachineImagesToVersioned(versions []MachineImage) policy.VersionedList {
+	result := []policy.Versioned{}
+	for i := range versions {
+		result = append(result, &versions[i])
+	}
+	return result
 }
 
 //nolint:gochecknoinits // This is required for the Kubebuilder tooling.

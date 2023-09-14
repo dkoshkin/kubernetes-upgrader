@@ -38,7 +38,7 @@ metadata:
 spec:
   clusterName: capi-quickstart
   versionRange: v1.27.x
-  machineImagesLabelSelector:
+  machineImageSelector:
     matchLabels:
       imageBuilderVersion: v1
 ---

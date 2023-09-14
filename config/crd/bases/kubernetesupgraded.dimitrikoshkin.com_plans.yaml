@@ -53,7 +53,7 @@ spec:
                 description: ClusterName is the name of the cluster to upgrade.
                 minLength: 1
                 type: string
-              machineImagesLabelSelector:
+              machineImageSelector:
                 description: MachineImageSelector can be used to select MachineImages
                   to apply to the cluster plan. Defaults to the empty LabelSelector,
                   which matches all objects.

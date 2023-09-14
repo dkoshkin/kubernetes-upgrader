@@ -3,10 +3,8 @@
 
 package policy
 
-import corev1 "k8s.io/api/core/v1"
-
-type VersionedObject interface {
-	GetID() string
+type Versioned interface {
 	GetVersion() string
-	GetObjectReference() *corev1.ObjectReference
 }
+
+type VersionedList []Versioned

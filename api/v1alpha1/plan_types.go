@@ -46,7 +46,7 @@ type PlanSpec struct {
 	// MachineImageSelector can be used to select MachineImages to apply to the cluster plan.
 	// Defaults to the empty LabelSelector, which matches all objects.
 	// +optional
-	MachineImageSelector *metav1.LabelSelector `json:"machineImagesLabelSelector,omitempty"`
+	MachineImageSelector *metav1.LabelSelector `json:"machineImageSelector,omitempty"`
 
 	// TopologyVariable is the name of the topology variable to set with the MachineImage's ID.
 	// +optional

@@ -5,5 +5,5 @@ package policy
 
 // Policer is an interface representing a policy implementation type.
 type Policer interface {
-	Latest([]VersionedObject) (string, error)
+	Latest([]Versioned) (string, error)
 }
