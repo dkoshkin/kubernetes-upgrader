@@ -5,8 +5,6 @@ package policy
 
 import (
 	"testing"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 func TestNewSemVer(t *testing.T) {
@@ -45,21 +43,13 @@ type testVersionedString struct {
 	version string
 }
 
-func (v *testVersionedString) GetID() string {
-	return ""
-}
-
 func (v *testVersionedString) GetVersion() string {
 	return v.version
 }
 
-func (v *testVersionedString) GetObjectReference() *corev1.ObjectReference {
-	return nil
-}
-
-func testVersionedStrings(versions ...string) []VersionedObject {
+func testVersionedStrings(versions ...string) []Versioned {
 	//nolint:prealloc // Copied from another repo.
-	var versioned []VersionedObject
+	var versioned []Versioned
 	for _, v := range versions {
 		versioned = append(versioned, &testVersionedString{v})
 	}
@@ -71,7 +61,7 @@ func TestSemVer_Latest(t *testing.T) {
 	cases := []struct {
 		label           string
 		semverRange     string
-		versions        []VersionedObject
+		versions        []Versioned
 		expectedVersion string
 		expectErr       bool
 	}{

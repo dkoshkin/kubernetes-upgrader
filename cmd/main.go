@@ -24,37 +24,20 @@ import (
 	"fmt"
 	"os"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 	"github.com/dkoshkin/kubernetes-upgrader/internal/controller"
+	"github.com/dkoshkin/kubernetes-upgrader/internal/scheme"
 	"github.com/dkoshkin/kubernetes-upgrader/internal/version"
 )
 
 var (
-	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
-
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(clusterv1.AddToScheme(scheme))
-
-	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
-	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
-	utilruntime.Must(kubernetesupgraderv1.AddToScheme(scheme))
-	//+kubebuilder:scaffold:scheme
-}
 
 func main() {
 	var v bool
@@ -97,7 +80,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
+		Scheme:                 scheme.Scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,

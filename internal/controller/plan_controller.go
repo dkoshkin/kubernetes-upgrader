@@ -148,7 +148,7 @@ func (r *PlanReconciler) reconcileNormal(
 	}
 
 	// Get the latest version from MachineImages.
-	latestVersion, err := r.latestMachineImageVersion(ctx, logger, plan)
+	latestVersion, err := latestMachineImageVersion(ctx, r.Client, logger, plan)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -240,13 +240,14 @@ func (r *PlanReconciler) reconcileDelete(
 	return ctrl.Result{}, nil
 }
 
-func (r *PlanReconciler) latestMachineImageVersion(
+func latestMachineImageVersion(
 	ctx context.Context,
+	k8sClient client.Client,
 	logger logr.Logger,
 	plan *kubernetesupgraderv1.Plan,
-) (policy.VersionedObject, error) {
+) (*kubernetesupgraderv1.MachineImage, error) {
 	logger.Info("Listing MachineImages for Plan")
-	machineImages, err := machineImagesForPlan(ctx, r.Client, plan)
+	machineImages, err := machineImagesForPlan(ctx, k8sClient, plan)
 	if err != nil {
 		return nil, fmt.Errorf("error listing MachineImages for Plan: %w", err)
 	}
@@ -264,12 +265,14 @@ func (r *PlanReconciler) latestMachineImageVersion(
 	}
 
 	// Get the latest version from the MachineImages that match VersionRange.
-	latestVersion, err := policer.Latest(possibleMachineImages)
+	latestVersion, err := policer.Latest(
+		kubernetesupgraderv1.MachineImagesToVersioned(possibleMachineImages),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest version from MachineImages: %w", err)
 	}
 
-	return latestVersion, nil
+	return latestVersion.(*kubernetesupgraderv1.MachineImage), nil
 }
 
 func machineImagesForPlan(
@@ -300,12 +303,12 @@ func machineImagesForPlan(
 // createdMachineImages returns a list of MachineImages that have spec.ID set.
 func machineImagesWithIDs(
 	allMachines []kubernetesupgraderv1.MachineImage,
-) []policy.VersionedObject {
-	var machineImages []policy.VersionedObject
+) []kubernetesupgraderv1.MachineImage {
+	var machineImages []kubernetesupgraderv1.MachineImage
 	for i := range allMachines {
 		machineImage := allMachines[i]
 		if machineImage.Spec.ID != "" {
-			machineImages = append(machineImages, &machineImage)
+			machineImages = append(machineImages, machineImage)
 		}
 	}
 	return machineImages
@@ -314,7 +317,7 @@ func machineImagesWithIDs(
 // updateTopologyVariable will update the value of the variableToUpdate with the MachineImage ID.
 func updateTopologyVariable(
 	variables []clusterv1.ClusterVariable,
-	latestVersion policy.VersionedObject,
+	latestVersion *kubernetesupgraderv1.MachineImage,
 	variableToUpdate *string,
 ) error {
 	for i, variable := range variables {

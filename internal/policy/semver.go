@@ -32,14 +32,14 @@ func NewSemVer(r string) (*SemVer, error) {
 }
 
 // Latest returns latest version from a provided list of strings.
-func (p *SemVer) Latest(versions []VersionedObject) (VersionedObject, error) {
+func (p *SemVer) Latest(versions VersionedList) (Versioned, error) {
 	if len(versions) == 0 {
 		//nolint:goerr113 // This error type is not expected to be checked.
 		return nil, errors.New("version list argument cannot be empty")
 	}
 
 	var latestSemver *semver.Version
-	var latestVersioned VersionedObject
+	var latestVersioned Versioned
 	for i := range versions {
 		o := versions[i]
 		if v, err := version.ParseVersion(o.GetVersion()); err == nil {
