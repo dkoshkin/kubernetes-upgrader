@@ -33,7 +33,9 @@ import (
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 	"github.com/dkoshkin/kubernetes-upgrader/internal/policy"
@@ -246,5 +248,46 @@ func (r *PlanReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	//nolint:wrapcheck // This is generated code.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubernetesupgraderv1.Plan{}).
+		Watches(
+			&kubernetesupgraderv1.MachineImage{},
+			handler.EnqueueRequestsFromMapFunc(r.machineImageMapper),
+		).
 		Complete(r)
+}
+
+func (r *PlanReconciler) machineImageMapper(
+	ctx context.Context,
+	o client.Object,
+) []reconcile.Request {
+	machineImage, ok := o.(*kubernetesupgraderv1.MachineImage)
+	logger := log.FromContext(ctx).
+		WithValues("machineImage", machineImage.Name, "namespace", machineImage.Namespace)
+
+	if !ok {
+		//nolint:goerr113 // This is a user facing error.
+		logger.Error(
+			fmt.Errorf("expected a MachineImage but got a %T", machineImage),
+			"failed to reconcile object",
+		)
+		return nil
+	}
+
+	plans := &kubernetesupgraderv1.PlanList{}
+	listOps := &client.ListOptions{
+		Namespace: machineImage.GetNamespace(),
+	}
+	err := r.List(ctx, plans, listOps)
+	if err != nil {
+		return []reconcile.Request{}
+	}
+	requests := make([]reconcile.Request, len(plans.Items))
+	for i := range plans.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: client.ObjectKey{
+				Namespace: plans.Items[i].Namespace,
+				Name:      plans.Items[i].Name,
+			},
+		}
+	}
+	return requests
 }
