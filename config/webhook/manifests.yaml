@@ -10,6 +10,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-clusterclassclusterupgrader
+  failurePolicy: Fail
+  name: mclusterclassclusterupgrader.kb.io
+  rules:
+  - apiGroups:
+    - kubernetesupgraded.dimitrikoshkin.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusterclassclusterupgraders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-machineimage
   failurePolicy: Fail
   name: mmachineimage.kb.io
@@ -50,6 +70,26 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-clusterclassclusterupgrader
+  failurePolicy: Fail
+  name: vclusterclassclusterupgrader.kb.io
+  rules:
+  - apiGroups:
+    - kubernetesupgraded.dimitrikoshkin.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusterclassclusterupgraders
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

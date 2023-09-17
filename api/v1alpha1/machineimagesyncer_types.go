@@ -49,14 +49,14 @@ type MachineImageSyncerSpec struct {
 
 func (s *MachineImageSyncerSpec) GetMachineImageTemplate(
 	ctx context.Context,
-	r client.Reader,
+	reader client.Reader,
 ) (*MachineImageTemplate, error) {
 	machineImageTemplate := &MachineImageTemplate{}
 	key := client.ObjectKey{
 		Name:      s.MachineImageTemplateRef.Name,
 		Namespace: s.MachineImageTemplateRef.Namespace,
 	}
-	err := r.Get(ctx, key, machineImageTemplate)
+	err := reader.Get(ctx, key, machineImageTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("error getting MachineImageTemplate for MachineImageSyncer: %w", err)
 	}

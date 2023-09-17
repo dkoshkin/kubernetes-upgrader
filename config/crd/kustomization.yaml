@@ -6,6 +6,7 @@ resources:
 - bases/kubernetesupgraded.dimitrikoshkin.com_plans.yaml
 - bases/kubernetesupgraded.dimitrikoshkin.com_machineimagesyncers.yaml
 - bases/kubernetesupgraded.dimitrikoshkin.com_machineimagetemplates.yaml
+- bases/kubernetesupgraded.dimitrikoshkin.com_clusterclassclusterupgraders.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
@@ -15,6 +16,7 @@ patches:
 #- path: patches/webhook_in_plans.yaml
 #- path: patches/webhook_in_machineimagesyncers.yaml
 #- path: patches/webhook_in_machineimagetemplates.yaml
+#- path: patches/webhook_in_clusterclassclusterupgraders.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
@@ -23,6 +25,7 @@ patches:
 #- path: patches/cainjection_in_plans.yaml
 #- path: patches/cainjection_in_machineimagesyncers.yaml
 #- path: patches/cainjection_in_machineimagetemplates.yaml
+#- path: patches/cainjection_in_clusterclassclusterupgraders.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.

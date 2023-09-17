@@ -135,6 +135,23 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "MachineImageSyncer")
 		os.Exit(1)
 	}
+	if err = (&controller.ClusterClassClusterUpgraderReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("clusterclassclusterupgrader-reconciler"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(
+			err,
+			"unable to create controller",
+			"controller",
+			"ClusterClassClusterUpgrader",
+		)
+		os.Exit(1)
+	}
+	if err = (&kubernetesupgraderv1.ClusterClassClusterUpgrader{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterClassClusterUpgrader")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

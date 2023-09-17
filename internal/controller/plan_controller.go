@@ -21,19 +21,15 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,7 +55,6 @@ type PlanReconciler struct {
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=plans/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=plans/finalizers,verbs=update
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages,verbs=get;list;watch
-//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -114,38 +109,12 @@ func (r *PlanReconciler) Reconcile(
 	return r.reconcileNormal(ctx, logger, plan)
 }
 
-//nolint:funlen // This function is mostly calling other functions.
 func (r *PlanReconciler) reconcileNormal(
 	ctx context.Context,
 	logger logr.Logger,
 	plan *kubernetesupgraderv1.Plan,
 ) (ctrl.Result, error) {
 	logger.Info("Reconciling normal")
-
-	// Get the Cluster referenced by this Plan.
-	cluster := &clusterv1.Cluster{}
-	if err := r.Get(ctx, client.ObjectKey{
-		Namespace: plan.Namespace,
-		Name:      plan.Spec.ClusterName,
-	}, cluster); err != nil {
-		logger.Error(err,
-			"unable to fetch Cluster",
-			"namespace", plan.Namespace, "cluster", plan.Spec.ClusterName)
-		r.Recorder.Eventf(
-			plan,
-			corev1.EventTypeWarning,
-			"GetClusterFailed",
-			"Unable to get Cluster %q: %s",
-			plan.Spec.ClusterName,
-			plan.Name,
-			err,
-		)
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{RequeueAfter: planRequeueDelay}, nil
-		}
-		//nolint:wrapcheck // No additional context to add.
-		return ctrl.Result{}, err
-	}
 
 	// Get the latest version from MachineImages.
 	latestVersion, err := latestMachineImageVersion(ctx, r.Client, logger, plan)
@@ -165,65 +134,10 @@ func (r *PlanReconciler) reconcileNormal(
 	}
 
 	// Update the status with the latest found version.
-	plan.Status.LatestFoundVersion = latestVersion.GetVersion()
-
-	// If the latest version is the same as the current version, there is nothing to do.
-	if cluster.Spec.Topology.Version == latestVersion.GetVersion() {
-		logger.Info("Cluster is already at the latest version", "version", latestVersion)
-		r.Recorder.Eventf(
-			plan,
-			corev1.EventTypeNormal,
-			"ClusterUsingLatestVersion",
-			"Cluster is already using the latest version %q",
-			latestVersion.GetVersion(),
-		)
-		// Update the status with the latest version set on the Cluster.
-		plan.Status.LatestSetVersion = latestVersion.GetVersion()
-		return ctrl.Result{}, nil
+	plan.Status.MachineImageDetails = &kubernetesupgraderv1.MachineImageDetails{
+		Version: latestVersion.GetVersion(),
+		ID:      latestVersion.GetID(),
 	}
-
-	// If the latest version is not the same as the current version, update the Cluster.
-	logger.Info("Updating Cluster version", "version", latestVersion)
-	r.Recorder.Eventf(
-		plan,
-		corev1.EventTypeNormal,
-		"SettingClusterVersion",
-		"Setting cluster to the latest version %q",
-		latestVersion.GetVersion(),
-	)
-	cluster.Spec.Topology.Version = latestVersion.GetVersion()
-
-	// Update the Cluster topology variable value if it is set.
-	if plan.Spec.TopologyVariable != nil && *plan.Spec.TopologyVariable != "" {
-		logger.Info("Updating Cluster variable", "variable", *plan.Spec.TopologyVariable)
-		err = updateTopologyVariable(
-			cluster.Spec.Topology.Variables,
-			latestVersion,
-			plan.Spec.TopologyVariable,
-		)
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf(
-				"error updating Cluster topology variable value: %w",
-				err,
-			)
-		}
-	}
-
-	// Update the Cluster after updating the version and topology variable value.
-	err = r.Update(ctx, cluster)
-	if err != nil {
-		r.Recorder.Eventf(
-			plan,
-			corev1.EventTypeWarning,
-			"ErrorUpdatingVersion",
-			"Error updating Cluster with a new version: %s",
-			err,
-		)
-		return ctrl.Result{}, fmt.Errorf("error updating Cluster with a new version: %w", err)
-	}
-
-	// Update the status with the latest version set on the Cluster.
-	plan.Status.LatestSetVersion = latestVersion.GetVersion()
 	// Update the Plan status with the latest MachineImage.
 	plan.Status.MachineImageRef = latestVersion.GetObjectReference()
 
@@ -312,34 +226,6 @@ func machineImagesWithIDs(
 		}
 	}
 	return machineImages
-}
-
-// updateTopologyVariable will update the value of the variableToUpdate with the MachineImage ID.
-func updateTopologyVariable(
-	variables []clusterv1.ClusterVariable,
-	latestVersion *kubernetesupgraderv1.MachineImage,
-	variableToUpdate *string,
-) error {
-	for i, variable := range variables {
-		if variable.Name == pointer.StringDeref(variableToUpdate, "") {
-			value, err := toJSON(latestVersion)
-			if err != nil {
-				return fmt.Errorf("failed to marshal latest version: %w", err)
-			}
-			variables[i].Value = *value
-			break
-		}
-	}
-
-	return nil
-}
-
-func toJSON(obj interface{}) (*v1.JSON, error) {
-	marshaled, err := json.Marshal(obj)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal variable value: %w", err)
-	}
-	return &v1.JSON{Raw: marshaled}, nil
 }
 
 func patchPlan(
