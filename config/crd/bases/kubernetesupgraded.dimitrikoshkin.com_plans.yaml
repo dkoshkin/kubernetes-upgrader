@@ -17,17 +17,11 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.clusterName
-      name: Cluster Name
-      type: string
     - jsonPath: .spec.versionRange
       name: Version Range
       type: string
-    - jsonPath: .status.latestFoundVersion
-      name: Latest Found Version
-      type: string
-    - jsonPath: .status.latestSetVersion
-      name: Latest Set Version
+    - jsonPath: .status.machineImageDetails.version
+      name: Latest Version
       type: string
     name: v1alpha1
     schema:
@@ -49,10 +43,6 @@ spec:
           spec:
             description: PlanSpec defines the desired state of Plan.
             properties:
-              clusterName:
-                description: ClusterName is the name of the cluster to upgrade.
-                minLength: 1
-                type: string
               machineImageSelector:
                 description: MachineImageSelector can be used to select MachineImages
                   to apply to the cluster plan. Defaults to the empty LabelSelector,
@@ -100,30 +90,32 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
-              topologyVariable:
-                description: TopologyVariable is the name of the topology variable
-                  to set with the MachineImage's ID.
-                type: string
               versionRange:
                 description: VersionRange gives a semver range of the Kubernetes version.
                   The cluster will be upgraded to the highest version within the range.
                 minLength: 1
                 type: string
             required:
-            - clusterName
             - versionRange
             type: object
           status:
             description: PlanStatus defines the observed state of Plan.
             properties:
-              latestFoundVersion:
-                description: LatestFoundVersion is the highest version within the
-                  range that was found.
-                type: string
-              latestSetVersion:
-                description: LatestFoundVersion is the highest version within the
-                  range that was set on the Cluster.
-                type: string
+              machineImageDetails:
+                description: MachineImageDetails holds the details for a MachineImage
+                  with the highest version within the range.
+                properties:
+                  id:
+                    description: ID is the unique name or another identifier of the
+                      image that was built.
+                    type: string
+                  version:
+                    description: Version is the version of the Kubernetes image to
+                      build
+                    type: string
+                required:
+                - id
+                type: object
               machineImageRef:
                 description: MachineImageRef is a reference to the MachineImage that
                   was applied to the cluster upgrade.
@@ -162,6 +154,9 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+            required:
+            - machineImageDetails
+            - machineImageRef
             type: object
         type: object
     served: true

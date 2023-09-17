@@ -1,0 +1,27 @@
+# permissions for end users to view clusterclassclusterupgraders.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: clusterclassclusterupgrader-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kubernetes-upgrader
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/managed-by: kustomize
+  name: clusterclassclusterupgrader-viewer-role
+rules:
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - clusterclassclusterupgraders
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - clusterclassclusterupgraders/status
+  verbs:
+  - get

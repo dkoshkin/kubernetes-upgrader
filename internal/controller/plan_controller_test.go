@@ -25,7 +25,6 @@ var (
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: kubernetesupgraderv1.PlanSpec{
-			ClusterName:          "test-cluster",
 			VersionRange:         "v1.27.x",
 			MachineImageSelector: &metav1.LabelSelector{},
 		},
@@ -37,7 +36,6 @@ var (
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: kubernetesupgraderv1.PlanSpec{
-			ClusterName:  "test-cluster",
 			VersionRange: "v1.27.x",
 			MachineImageSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{

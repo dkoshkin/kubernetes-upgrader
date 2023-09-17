@@ -51,4 +51,17 @@ resources:
   kind: MachineImageTemplate
   path: github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: dimitrikoshkin.com
+  group: kubernetesupgraded
+  kind: ClusterClassClusterUpgrader
+  path: github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

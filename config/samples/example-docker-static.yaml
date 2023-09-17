@@ -36,11 +36,24 @@ metadata:
     app.kubernetes.io/created-by: kubernetes-upgrader
   name: plan-sample
 spec:
-  clusterName: capi-quickstart
   versionRange: v1.27.x
   machineImageSelector:
     matchLabels:
       imageBuilderVersion: v1
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: ClusterClassClusterUpgrader
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterclassclusterupgrader
+    app.kubernetes.io/instance: clusterclassclusterupgrader-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: clusterclassclusterupgrader-sample
+spec:
+  clusterName: capi-quickstart
+  planRef:
+    name: plan-sample
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
 kind: MachineImageTemplate

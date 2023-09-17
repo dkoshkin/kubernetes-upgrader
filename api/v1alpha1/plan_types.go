@@ -32,11 +32,6 @@ type PlanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// ClusterName is the name of the cluster to upgrade.
-	// +required
-	// +kubebuilder:validation:MinLength=1
-	ClusterName string `json:"clusterName"`
-
 	// VersionRange gives a semver range of the Kubernetes version.
 	// The cluster will be upgraded to the highest version within the range.
 	// +required
@@ -47,10 +42,6 @@ type PlanSpec struct {
 	// Defaults to the empty LabelSelector, which matches all objects.
 	// +optional
 	MachineImageSelector *metav1.LabelSelector `json:"machineImageSelector,omitempty"`
-
-	// TopologyVariable is the name of the topology variable to set with the MachineImage's ID.
-	// +optional
-	TopologyVariable *string `json:"topologyVariable,omitempty"`
 }
 
 // PlanStatus defines the observed state of Plan.
@@ -58,26 +49,26 @@ type PlanStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// LatestFoundVersion is the highest version within the range that was found.
-	// +optional
-	LatestFoundVersion string `json:"latestFoundVersion,omitempty"`
-
-	// LatestFoundVersion is the highest version within the range that was set on the Cluster.
-	// +optional
-	LatestSetVersion string `json:"latestSetVersion,omitempty"`
+	// MachineImageDetails holds the details for a MachineImage with the highest version within the range.
+	MachineImageDetails *MachineImageDetails `json:"machineImageDetails"`
 
 	// MachineImageRef is a reference to the MachineImage that was applied to the cluster upgrade.
-	// +optional
-	MachineImageRef *corev1.ObjectReference `json:"machineImageRef,omitempty"`
+	MachineImageRef *corev1.ObjectReference `json:"machineImageRef"`
+}
+
+type MachineImageDetails struct {
+	// Version is the version of the Kubernetes image to build
+	Version string `json:"version,omitempty"`
+
+	// ID is the unique name or another identifier of the image that was built.
+	ID string `json:"id"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:categories=cluster-api
-//+kubebuilder:printcolumn:name="Cluster Name",type="string",JSONPath=`.spec.clusterName`
 //+kubebuilder:printcolumn:name="Version Range",type="string",JSONPath=`.spec.versionRange`
-//+kubebuilder:printcolumn:name="Latest Found Version",type="string",JSONPath=`.status.latestFoundVersion`
-//+kubebuilder:printcolumn:name="Latest Set Version",type="string",JSONPath=`.status.latestSetVersion`
+//+kubebuilder:printcolumn:name="Latest Version",type="string",JSONPath=`.status.machineImageDetails.version`
 
 // Plan is the Schema for the plans API.
 type Plan struct {

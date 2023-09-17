@@ -67,6 +67,7 @@ type MachineImageSyncerReconciler struct {
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimagesyncers/finalizers,verbs=update
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimagetemplates,verbs=get;list;watch
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=machineimages,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
