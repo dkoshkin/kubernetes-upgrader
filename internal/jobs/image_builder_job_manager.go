@@ -11,8 +11,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 )
@@ -35,10 +37,11 @@ type Manager interface {
 
 type ImageBuilderJobManager struct {
 	client runtimeclient.Client
+	scheme *runtime.Scheme
 }
 
-func NewManager(client runtimeclient.Client) Manager {
-	return &ImageBuilderJobManager{client: client}
+func NewManager(client runtimeclient.Client, scheme *runtime.Scheme) Manager {
+	return &ImageBuilderJobManager{client: client, scheme: scheme}
 }
 
 func (m *ImageBuilderJobManager) Create(
@@ -50,14 +53,6 @@ func (m *ImageBuilderJobManager) Create(
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-", owner.Name),
 			Namespace:    owner.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: owner.APIVersion,
-					Kind:       owner.Kind,
-					Name:       owner.Name,
-					UID:        owner.UID,
-				},
-			},
 			Labels: map[string]string{
 				ImageBuilderOwnedLabel: "",
 			},
@@ -69,7 +64,12 @@ func (m *ImageBuilderJobManager) Create(
 		},
 	}
 
-	err := m.client.Create(ctx, job)
+	err := controllerutil.SetControllerReference(owner, job, m.scheme)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set controller reference on job: %w", err)
+	}
+
+	err = m.client.Create(ctx, job)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create image builder job: %w", err)
 	}

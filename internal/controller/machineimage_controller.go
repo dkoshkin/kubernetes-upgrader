@@ -34,9 +34,7 @@ import (
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 	"github.com/dkoshkin/kubernetes-upgrader/internal/jobs"
@@ -120,9 +118,11 @@ func (r *MachineImageReconciler) reconcileNormal(
 ) (ctrl.Result, error) {
 	logger.Info("Reconciling normal")
 
+	jobManager := jobs.NewManager(r.Client, r.Scheme)
+
 	logger.Info("Checking if job already exists")
 	if machineImage.Status.JobRef != nil {
-		return r.handleJob(ctx, logger, machineImage, jobs.NewManager(r.Client))
+		return r.handleJob(ctx, logger, machineImage, jobManager)
 	}
 
 	if machineImage.Spec.ID != "" {
@@ -131,8 +131,6 @@ func (r *MachineImageReconciler) reconcileNormal(
 		machineImage.Status.Phase = kubernetesupgraderv1.MachineImagePhaseCreated
 		return ctrl.Result{}, nil
 	}
-
-	jobManager := jobs.NewManager(r.Client)
 
 	logger.Info("Job reference not set, creating a new job")
 	r.Recorder.Eventf(
@@ -235,34 +233,6 @@ func (r *MachineImageReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	//nolint:wrapcheck // This is generated code.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubernetesupgraderv1.MachineImage{}).
-		Watches(
-			&batchv1.Job{},
-			handler.EnqueueRequestsFromMapFunc(r.jobMapper),
-		).
+		Owns(&batchv1.Job{}).
 		Complete(r)
-}
-
-// jobMapper generates reconcile requests for every Job associated with a MachineImage.
-func (r *MachineImageReconciler) jobMapper(
-	ctx context.Context,
-	o client.Object,
-) []reconcile.Request {
-	job, ok := o.(*batchv1.Job)
-	logger := log.FromContext(ctx).
-		WithValues("job", job.Name, "namespace", job.Namespace)
-
-	if !ok {
-		//nolint:goerr113 // This is a user facing error.
-		logger.Error(fmt.Errorf("expected a Job but got a %T", job), "failed to reconcile object")
-		return nil
-	}
-
-	result := []ctrl.Request{}
-	for _, owner := range job.GetOwnerReferences() {
-		if owner.Kind == "MachineImage" {
-			key := client.ObjectKey{Namespace: o.GetNamespace(), Name: owner.Name}
-			result = append(result, ctrl.Request{NamespacedName: key})
-		}
-	}
-	return result
 }
