@@ -1,0 +1,27 @@
+# permissions for end users to view debianrepositorysources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: debianrepositorysource-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kubernetes-upgrader
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/managed-by: kustomize
+  name: debianrepositorysource-viewer-role
+rules:
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - debianrepositorysources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - debianrepositorysources/status
+  verbs:
+  - get

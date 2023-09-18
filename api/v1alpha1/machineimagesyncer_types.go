@@ -37,7 +37,7 @@ type MachineImageSyncerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// VersionRange gives a semver range of the Kubernetes version.
-	// The cluster will be upgraded to the highest version within the range.
+	// New MachineImages will be created for all versions within the range.
 	// +required
 	// +kubebuilder:validation:MinLength=1
 	VersionRange string `json:"versionRange"`

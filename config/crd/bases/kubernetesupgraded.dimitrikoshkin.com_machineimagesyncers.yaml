@@ -81,7 +81,7 @@ spec:
                 x-kubernetes-map-type: atomic
               versionRange:
                 description: VersionRange gives a semver range of the Kubernetes version.
-                  The cluster will be upgraded to the highest version within the range.
+                  New MachineImages will be created for all versions within the range.
                 minLength: 1
                 type: string
             required:
