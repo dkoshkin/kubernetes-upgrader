@@ -133,6 +133,10 @@ metadata:
   name: machineimagesyncer-sample
 spec:
   versionRange: v1.27.x
+  sourceRef:
+    apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+    kind: DebianRepositorySource
+    name: debianrepositorysource-sample
   machineImageTemplateRef:
     name: machineimagetemplate-sample
 ---

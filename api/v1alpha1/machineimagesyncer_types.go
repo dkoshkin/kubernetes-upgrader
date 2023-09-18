@@ -22,9 +22,12 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,9 +45,43 @@ type MachineImageSyncerSpec struct {
 	// +kubebuilder:validation:MinLength=1
 	VersionRange string `json:"versionRange"`
 
+	// SourceRef is a reference to a type that satisfies the Source contract.
+	// Expects status.versions to be a list of version strings.
+	// +required
+	SourceRef corev1.ObjectReference `json:"sourceRef"`
+
 	// MachineImageTemplateRef is a reference to a MachineImageTemplate object.
 	// +required
 	MachineImageTemplateRef corev1.ObjectReference `json:"machineImageTemplateRef"`
+}
+
+func (s *MachineImageSyncerSpec) GetVersionsFromSource(
+	ctx context.Context,
+	reader client.Reader,
+) ([]string, error) {
+	sourceRef := s.SourceRef
+	source, err := external.Get(
+		ctx,
+		reader,
+		&sourceRef,
+		sourceRef.Namespace,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get object from ref %v %q: %w",
+			sourceRef.GroupVersionKind(),
+			sourceRef.Name,
+			err,
+		)
+	}
+
+	versionsField := []string{"status", "versions"}
+	versions, _, err := unstructured.NestedStringSlice(source.Object, versionsField...)
+	if err != nil {
+		return nil, fmt.Errorf("error getting %s: %w", strings.Join(versionsField, "."), err)
+	}
+
+	return versions, nil
 }
 
 func (s *MachineImageSyncerSpec) GetMachineImageTemplate(
