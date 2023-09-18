@@ -127,9 +127,9 @@ type MachineImageList struct {
 }
 
 func MachineImagesToVersioned(versions []MachineImage) policy.VersionedList {
-	result := []policy.Versioned{}
+	result := make([]policy.Versioned, len(versions))
 	for i := range versions {
-		result = append(result, &versions[i])
+		result[i] = &versions[i]
 	}
 	return result
 }

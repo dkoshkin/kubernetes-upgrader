@@ -110,6 +110,19 @@ spec:
           restartPolicy: Never
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: DebianRepositorySource
+metadata:
+  labels:
+    app.kubernetes.io/name: debianrepositorysource
+    app.kubernetes.io/instance: debianrepositorysource-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: debianrepositorysource-sample
+spec:
+  url: https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v1.27/deb/Packages
+  architecture: amd64
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
 kind: MachineImageSyncer
 metadata:
   labels:
@@ -120,6 +133,10 @@ metadata:
   name: machineimagesyncer-sample
 spec:
   versionRange: v1.27.x
+  sourceRef:
+    apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+    kind: DebianRepositorySource
+    name: debianrepositorysource-sample
   machineImageTemplateRef:
     name: machineimagetemplate-sample
 ---

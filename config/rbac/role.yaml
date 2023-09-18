@@ -64,6 +64,32 @@ rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
+  - debianrepositorysources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - debianrepositorysources/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - debianrepositorysources/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
   - machineimages
   verbs:
   - create

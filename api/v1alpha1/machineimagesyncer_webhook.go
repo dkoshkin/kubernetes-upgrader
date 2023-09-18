@@ -51,6 +51,10 @@ var _ webhook.Defaulter = &MachineImageSyncer{}
 func (r *MachineImageSyncer) Default() {
 	machineimagesyncerlog.Info("default", "name", r.Name)
 
+	if r.Spec.SourceRef.Namespace == "" {
+		r.Spec.SourceRef.Namespace = r.Namespace
+	}
+
 	if r.Spec.MachineImageTemplateRef.Namespace == "" {
 		r.Spec.MachineImageTemplateRef.Namespace = r.Namespace
 	}
@@ -65,6 +69,18 @@ var _ webhook.Validator = &MachineImageSyncer{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *MachineImageSyncer) ValidateCreate() (admission.Warnings, error) {
 	machineimagesyncerlog.Info("validate create", "name", r.Name)
+
+	if r.Spec.SourceRef.Name == "" {
+		//nolint:goerr113 // This is a user facing error.
+		return nil,
+			fmt.Errorf("spec.sourceRef.name must be set")
+	}
+
+	if r.Namespace != r.Spec.SourceRef.Namespace {
+		//nolint:goerr113 // This is a user facing error.
+		return nil,
+			fmt.Errorf("spec.sourceRef.namespace must be in the same namespace")
+	}
 
 	if r.Spec.MachineImageTemplateRef.Name == "" {
 		//nolint:goerr113 // This is a user facing error.

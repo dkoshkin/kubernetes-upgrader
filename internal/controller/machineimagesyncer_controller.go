@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
+	"github.com/dkoshkin/kubernetes-upgrader/internal/policy"
 )
 
 const (
@@ -133,13 +134,33 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 ) (ctrl.Result, error) {
 	logger.Info("Reconciling normal")
 
-	// FIXME(dkoshkin): Implement fetching packages from a source
-	kubernetesVersion := "v1.27.5"
+	latestVersion, err := latestVersionFromSource(ctx, r.Client, machineImageSyncer)
+	if err != nil {
+		r.Recorder.Eventf(
+			machineImageSyncer,
+			corev1.EventTypeWarning,
+			"GetVersionsFromSourceFailed",
+			"Unable to get latest version from source",
+			err,
+		)
+		return ctrl.Result{RequeueAfter: machineImageSyncerGetMachineImagesRequeue}, err
+	}
+
+	latestVersionString := latestVersion.GetVersion()
+	if latestVersionString == "" {
+		r.Recorder.Eventf(
+			machineImageSyncer,
+			corev1.EventTypeWarning,
+			"NoLatestVersionFromSource",
+			"No version found from source",
+		)
+		return ctrl.Result{RequeueAfter: machineImageSyncerGetMachineImagesRequeue}, nil
+	}
 
 	// These labels will be used to find MachineImages created by this MachineImageSyncer.
 	labels := map[string]string{
 		MachineImageSyncerNameLabel:              machineImageSyncer.Name,
-		MachineImageSyncerKubernetesVersionLabel: kubernetesVersion,
+		MachineImageSyncerKubernetesVersionLabel: latestVersionString,
 	}
 	machineImages, err := listMachineImagesWithLabels(
 		ctx,
@@ -148,13 +169,13 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 		labels,
 	)
 	if err != nil {
-		logger.Error(err, "unable to list MachineImages", "version", kubernetesVersion)
+		logger.Error(err, "unable to list MachineImages", "version", latestVersionString)
 		r.Recorder.Eventf(
 			machineImageSyncer,
 			corev1.EventTypeWarning,
 			"ListMachineImageFailed",
 			"Unable list MachineImage for Kubernetes version %s",
-			kubernetesVersion,
+			latestVersionString,
 			err,
 		)
 
@@ -183,12 +204,36 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			machineImageSyncer,
 			machineImageTemplate,
 			labels,
-			kubernetesVersion,
+			latestVersionString,
 		)
 		return r.reconcileCreateMachineImageAndWait(ctx, logger, machineImageSyncer, machineImage)
 	}
 
-	return ctrl.Result{}, nil
+	// TODO(dkoshkin) how to watch for changes to SourceRef?
+	return ctrl.Result{RequeueAfter: machineImageSyncerGetTemplateRequeue}, nil
+}
+
+func latestVersionFromSource(
+	ctx context.Context,
+	k8sClient client.Client,
+	machineImageSyncer *kubernetesupgraderv1.MachineImageSyncer,
+) (policy.Versioned, error) {
+	versions, err := machineImageSyncer.Spec.GetVersionsFromSource(ctx, k8sClient)
+	if err != nil {
+		return nil, fmt.Errorf("error getting versions from source: %w", err)
+	}
+
+	policer, err := policy.NewSemVer(machineImageSyncer.Spec.VersionRange)
+	if err != nil {
+		return nil, fmt.Errorf("invalid versionRange policy: %w", err)
+	}
+
+	latestVersion, err := policer.Latest(policy.VersionedStrings(versions...))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest version from source: %w", err)
+	}
+
+	return latestVersion, nil
 }
 
 func listMachineImagesWithLabels(

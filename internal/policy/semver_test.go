@@ -39,23 +39,6 @@ func TestNewSemVer(t *testing.T) {
 	}
 }
 
-type testVersionedString struct {
-	version string
-}
-
-func (v *testVersionedString) GetVersion() string {
-	return v.version
-}
-
-func testVersionedStrings(versions ...string) []Versioned {
-	//nolint:prealloc // Copied from another repo.
-	var versioned []Versioned
-	for _, v := range versions {
-		versioned = append(versioned, &testVersionedString{v})
-	}
-	return versioned
-}
-
 //nolint:funlen // Long tests are ok.
 func TestSemVer_Latest(t *testing.T) {
 	cases := []struct {
@@ -67,7 +50,7 @@ func TestSemVer_Latest(t *testing.T) {
 	}{
 		{
 			label: "With valid format",
-			versions: testVersionedStrings(
+			versions: VersionedStrings(
 				"1.0.0",
 				"1.0.0.1",
 				"1.0.0p",
@@ -80,25 +63,25 @@ func TestSemVer_Latest(t *testing.T) {
 		},
 		{
 			label:           "With valid format prefix",
-			versions:        testVersionedStrings("v1.2.3", "v1.0.0", "v0.1.0"),
+			versions:        VersionedStrings("v1.2.3", "v1.0.0", "v0.1.0"),
 			semverRange:     "1.0.x",
 			expectedVersion: "v1.0.0",
 		},
 		{
 			label:       "With invalid format prefix",
-			versions:    testVersionedStrings("b1.2.3", "b1.0.0", "b0.1.0"),
+			versions:    VersionedStrings("b1.2.3", "b1.0.0", "b0.1.0"),
 			semverRange: "1.0.x",
 			expectErr:   true,
 		},
 		{
 			label:       "With empty list",
-			versions:    testVersionedStrings(),
+			versions:    VersionedStrings(),
 			semverRange: "1.0.x",
 			expectErr:   true,
 		},
 		{
 			label:       "With non-matching version list",
-			versions:    testVersionedStrings("1.2.0"),
+			versions:    VersionedStrings("1.2.0"),
 			semverRange: "1.0.x",
 			expectErr:   true,
 		},
