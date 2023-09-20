@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.5.0 (2023-09-20)
+
+## What's Changed
+* chore: use a MachineImageTemplate object by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/39
+* chore: rename example files by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/41
+* fix: MachineImageSyncer reconcile race by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/42
+* chore: refactor machineimagesyncer controller to be more testable by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/43
+* fix: watch for Jobs in MachineImage reconciler by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/44
+* chore(deps): Bump actions/checkout from 3 to 4 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/45
+* chore(deps): Bump k8s.io/apiextensions-apiserver from 0.27.2 to 0.28.1 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/46
+* chore: refactor policy package to be more generic by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/47
+* feat: refactor to use ClusterClassClusterUpgrader type by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/48
+* fix: use builtin Owns kubebuilder watcher func by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/49
+* fix: watch MachineImage in Plan controller by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/50
+* feat: implement Debian repository source type by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/51
+* chore(deps): Bump k8s.io/apiextensions-apiserver from 0.28.1 to 0.28.2 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/52
+* chore(deps): Bump github.com/stretchr/testify from 1.8.2 to 1.8.4 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/53
+* chore(deps): Bump docker/login-action from 2 to 3 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/54
+* docs: add architecture details in README by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/56
+* docs: wait for clusterctl providers by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/57
+* fix: remove debug print lines by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/59
+* docs: minor fixes in the README by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/58
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.4.0...v0.5.0
+
 ## 0.4.0 (2023-09-06)
 
 ## What's Changed
