@@ -112,7 +112,7 @@ Use Kubernetes version `v1.26.3` if you are planning on using the sample config.
 
     ```sh
     export CLUSTER_TOPOLOGY=true
-    clusterctl init --infrastructure docker
+    clusterctl init --infrastructure docker --wait-providers
     ```
 
 1.  Create a workload cluster:
