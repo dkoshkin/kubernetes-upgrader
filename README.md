@@ -12,7 +12,28 @@ A set of Kubernetes controllers to automate Kubernetes clusters upgrade using [C
 This project is a set of Kubernetes controllers that build Kubernetes machine images using upstream [image-builder](https://github.com/kubernetes-sigs/image-builder),
 and then use those images to upgrade Kubernetes clusters that are using [Cluster API's ClusterClass](https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-class/).
 
-This should work with any Infrastructure provider supported by image-builder, but it was only tested with [vSphere's CAPV](https://github.com/kubernetes-sigs/cluster-api-provider-vsphere).
+This should work with any Infrastructure provider supported by image-builder,
+but it was only tested with [Docker's CAPD](https://github.com/kubernetes-sigs/cluster-api/tree/main/test/infrastructure/docker) and [vSphere's CAPV](https://github.com/kubernetes-sigs/cluster-api-provider-vsphere).
+
+The API and controllers design take inspiration from [Cluster API's](https://cluster-api.sigs.k8s.io/) including:
+
+-   There are template types that are used to create the actual types.
+    This is similar to CAPI's bootstrap and infrastructure templates.
+-   Some of the types comply to API contracts and share information through status fields.
+    This is similar to CAPI's infrastructure provider contracts and allows external controllers implementations.
+
+### API Types
+
+![Architecture](https://lucid.app/publicSegments/view/7e0cdb4a-8908-48dc-87a1-5933652564df/image.png "Architecture")
+
+-   `DebianRepositorySource` satisfies the `MachineImageSyncer` contract, fetching all available versions from a Kubernetes Debian repository and setting `status.versions`.
+-   `MachineImageTemplate` is a template for `MachineImage` used by `MachineImageSyncer`.
+-   `MachineImageSyncer` creates a new `MachineImage` objects with the latest version from `sourceRef` object. `DebianRepositorySource` is one implementation of the contract, but any type can be used as long as it sets the `status.versions` field.
+-   `MachineImage` runs a Job to build a Kubernetes machine image. The examples use [image-builder](https://github.com/kubernetes-sigs/image-builder),
+    but any tool can be used as long as it generates a Kubernetes machine image and labels the Job with `kubernetesupgraded.dimitrikoshkin.com/image-id`.
+    The controller sets `status.ready` once the Job succeeds and copies the label value to `spec.id`.
+-   `Plan` finds the latest `MachineImage` with `spec.version` that is in `spec.versionRange` and matches an optional `machineImageSelector`. It then sets `status.machineImageDetails` with `version` and image `id`.
+-   `ClusterClassClusterUpgrader` satisfies the Plan contract. It will update `spec.topology.version` and (an optional) field from `topologyVariable` of the CAPI Cluster, using the values from the Plan's `status.machineImageDetails`. .
 
 ## Getting Started
 
