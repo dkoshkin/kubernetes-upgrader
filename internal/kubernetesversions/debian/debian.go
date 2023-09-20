@@ -79,9 +79,6 @@ func remotePackagesFile(ctx context.Context, url string) (io.Reader, error) {
 		return nil, err
 	}
 
-	fmt.Printf("resp: %+v\n", resp)
-	fmt.Printf("resBody: %+v\n", string(resBody))
-
 	return bytes.NewReader(resBody), nil
 }
 
