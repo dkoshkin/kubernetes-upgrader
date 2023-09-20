@@ -21,7 +21,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -133,8 +132,6 @@ func (r *DebianRepositorySourceReconciler) reconcileNormal(
 		//nolint:wrapcheck // No additional context to add.
 		return ctrl.Result{RequeueAfter: debianRepositorySourceRequeueDelay}, err
 	}
-
-	fmt.Printf("versionsSource: %+v\n", versionedList)
 
 	versions := make([]string, len(versionedList))
 	for i := range versionedList {
