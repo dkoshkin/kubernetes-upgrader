@@ -137,7 +137,6 @@ Use Kubernetes version `v1.26.3` if you are planning on using the sample config.
 
     ```sh
     make release-snapshot
-    make docker-push IMG=ghcr.io/dkoshkin/kubernetes-upgrader:$(gojq -r '.version' dist/metadata.json)
     ```
 
 1.  If using a local KIND cluster:
@@ -146,21 +145,29 @@ Use Kubernetes version `v1.26.3` if you are planning on using the sample config.
     kind load docker-image ghcr.io/dkoshkin/kubernetes-upgrader:$(gojq -r '.version' dist/metadata.json)
     ```
 
+1.  Otherwise, push the image to a registry accessible by the cluster:
+
+    ```sh
+    make docker-push IMG=ghcr.io/dkoshkin/kubernetes-upgrader:$(gojq -r '.version' dist/metadata.json)
+    ```
+
 1.  Deploy the controller to the cluster with the image specified by `IMG`:
 
     ```sh
     make deploy IMG=ghcr.io/dkoshkin/kubernetes-upgrader:$(gojq -r '.version' dist/metadata.json)
     ```
 
-1.  Deploy the samples:
+1.  Deploy the Docker samples:
 
     ```sh
     kubectl apply -f config/samples/example-docker-static.yaml
     ```
 
+1.  You should see Pods created for Jobs that will "build" and image and the Cluster will be upgraded to the newest v1.27.x Kubernetes version.
+
 ### Undeploy controller
 
-UnDeploy the controller from the cluster:
+Undeploy the controller from the cluster:
 
 ```sh
 make undeploy
