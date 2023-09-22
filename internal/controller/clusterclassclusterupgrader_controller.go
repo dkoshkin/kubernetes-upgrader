@@ -215,7 +215,7 @@ func (r *ClusterClassClusterUpgraderReconciler) reconcileNormal(
 		)
 
 		// Update the status with the latest version set on the Cluster even if it was already set.
-		clusterUpgrader.Status.LatestSetVersion = latestVersion.String()
+		clusterUpgrader.Status.LatestSetVersion = versionString(latestVersion)
 
 		return ctrl.Result{}, nil
 	}
@@ -229,7 +229,7 @@ func (r *ClusterClassClusterUpgraderReconciler) reconcileNormal(
 		"Setting cluster to the latest version %q",
 		latestVersion,
 	)
-	cluster.Spec.Topology.Version = latestVersion.String()
+	cluster.Spec.Topology.Version = versionString(latestVersion)
 
 	// Update the Cluster topology variable value if it is set.
 	if clusterUpgrader.Spec.TopologyVariable != nil &&
@@ -262,7 +262,7 @@ func (r *ClusterClassClusterUpgraderReconciler) reconcileNormal(
 	}
 
 	// Update the status with the latest version set on the Cluster.
-	clusterUpgrader.Status.LatestSetVersion = latestVersion.String()
+	clusterUpgrader.Status.LatestSetVersion = versionString(latestVersion)
 
 	return ctrl.Result{}, nil
 }
@@ -366,4 +366,11 @@ func (r *ClusterClassClusterUpgraderReconciler) findObjectsForPlan(
 		}
 	}
 	return requests
+}
+
+func versionString(version *semver.Version) string {
+	if version == nil {
+		return ""
+	}
+	return fmt.Sprintf("v%s", version.String())
 }
