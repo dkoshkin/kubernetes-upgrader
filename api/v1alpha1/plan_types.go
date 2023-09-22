@@ -49,6 +49,11 @@ type PlanStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Phase represents the current phase of image building
+	// E.g. NoSuitableMachineImage, FoundMachineImage.
+	// +optional
+	Phase PlanPhase `json:"phase,omitempty"`
+
 	// MachineImageDetails holds the details for a MachineImage with the highest version within the range.
 	MachineImageDetails *MachineImageDetails `json:"machineImageDetails"`
 
@@ -69,6 +74,7 @@ type MachineImageDetails struct {
 //+kubebuilder:resource:categories=kubernetes-upgrader
 //+kubebuilder:printcolumn:name="Version Range",type="string",JSONPath=`.spec.versionRange`
 //+kubebuilder:printcolumn:name="Latest Version",type="string",JSONPath=`.status.machineImageDetails.version`
+//+kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 
 // Plan is the Schema for the plans API.
 type Plan struct {

@@ -132,6 +132,7 @@ func (r *PlanReconciler) reconcileNormal(
 			"LatestVersionNotFound",
 			"Did not find a suitable MachineImage, requeueing",
 		)
+		plan.Status.Phase = kubernetesupgraderv1.PlanPhaseNoSuitableMachineImage
 		return ctrl.Result{RequeueAfter: planRequeueDelay}, nil
 	}
 
@@ -142,6 +143,7 @@ func (r *PlanReconciler) reconcileNormal(
 	}
 	// Update the Plan status with the latest MachineImage.
 	plan.Status.MachineImageRef = latestVersion.GetObjectReference()
+	plan.Status.Phase = kubernetesupgraderv1.PlanPhaseFoundMachineImage
 
 	return ctrl.Result{}, nil
 }
