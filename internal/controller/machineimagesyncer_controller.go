@@ -30,22 +30,26 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 	"github.com/dkoshkin/kubernetes-upgrader/internal/policy"
 )
 
 const (
-	machineImageSyncerGetTemplateRequeue        = 1 * time.Second
-	machineImageSyncerGetMachineImagesRequeue   = 1 * time.Minute
-	machineImageSyncerCreateMachineImageRequeue = 1 * time.Minute
+	machineImageSyncerGetVersionsFromSourceRequeue = 1 * time.Minute
+	machineImageSyncerCreateMachineImageRequeue    = 1 * time.Minute
 )
 
 const (
@@ -80,7 +84,7 @@ type MachineImageSyncerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 //
-//nolint:dupl // Prefer readability over DRY.
+//nolint:dupl // Prefer readability to DRY.
 func (r *MachineImageSyncerReconciler) Reconcile(
 	ctx context.Context,
 	req ctrl.Request,
@@ -143,7 +147,7 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			"Unable to get latest version from source",
 			err,
 		)
-		return ctrl.Result{RequeueAfter: machineImageSyncerGetMachineImagesRequeue}, err
+		return ctrl.Result{RequeueAfter: machineImageSyncerGetVersionsFromSourceRequeue}, err
 	}
 
 	latestVersionString := latestVersion.GetVersion()
@@ -154,7 +158,7 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			"NoLatestVersionFromSource",
 			"No version found from source",
 		)
-		return ctrl.Result{RequeueAfter: machineImageSyncerGetMachineImagesRequeue}, nil
+		return ctrl.Result{RequeueAfter: machineImageSyncerGetVersionsFromSourceRequeue}, nil
 	}
 
 	// These labels will be used to find MachineImages created by this MachineImageSyncer.
@@ -179,7 +183,7 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			err,
 		)
 
-		return ctrl.Result{RequeueAfter: machineImageSyncerGetMachineImagesRequeue}, err
+		return ctrl.Result{}, err
 	}
 
 	// Create a new MachineImage if none already exist for the given version
@@ -195,8 +199,9 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 				"Unable to get MachineImageTemplate for MachineImageSyncer",
 				err,
 			)
+
 			//nolint:wrapcheck // No additional context to add.
-			return ctrl.Result{RequeueAfter: machineImageSyncerGetTemplateRequeue}, err
+			return ctrl.Result{}, err
 		}
 
 		// Build a new MachineImage for the given version.
@@ -205,12 +210,17 @@ func (r *MachineImageSyncerReconciler) reconcileNormal(
 			machineImageTemplate,
 			labels,
 			latestVersionString,
+			r.Scheme,
 		)
 		return r.reconcileCreateMachineImageAndWait(ctx, logger, machineImageSyncer, machineImage)
 	}
 
 	// TODO(dkoshkin) how to watch for changes to SourceRef?
-	return ctrl.Result{RequeueAfter: machineImageSyncerGetTemplateRequeue}, nil
+	return ctrl.Result{
+		RequeueAfter: pointer.DurationDeref(
+			machineImageSyncer.Spec.Interval,
+			kubernetesupgraderv1.MachineImageSyncerInterval),
+	}, nil
 }
 
 func latestVersionFromSource(
@@ -265,20 +275,12 @@ func machineImageForKubernetesVersion(
 	machineImageTemplate *kubernetesupgraderv1.MachineImageTemplate,
 	labels map[string]string,
 	kubernetesVersion string,
+	scheme *runtime.Scheme,
 ) *kubernetesupgraderv1.MachineImage {
 	objectMeta := metav1.ObjectMeta{
 		GenerateName: fmt.Sprintf("%s-%s-", machineImageSyncer.Name, kubernetesVersion),
 		Namespace:    machineImageSyncer.Namespace,
 		Labels:       labels,
-		// TODO(dkoshkin): Do we want to delete the MachineImage objects when MachineImageSyncer is deleted?
-		OwnerReferences: []metav1.OwnerReference{
-			{
-				APIVersion: machineImageSyncer.APIVersion,
-				Kind:       machineImageSyncer.Kind,
-				Name:       machineImageSyncer.Name,
-				UID:        machineImageSyncer.UID,
-			},
-		},
 	}
 	if objectMeta.Annotations == nil {
 		objectMeta.Annotations = map[string]string{}
@@ -302,10 +304,12 @@ func machineImageForKubernetesVersion(
 		},
 	}
 
+	// TODO(dkoshkin): Do we want to delete the MachineImage objects when MachineImageSyncer is deleted?
+	// This function is generating a new MachineImage object, shouldn never error.
+	_ = controllerutil.SetControllerReference(machineImageSyncer, machineImage, scheme)
+
 	return machineImage
 }
-
-//
 
 func (r *MachineImageSyncerReconciler) reconcileCreateMachineImageAndWait(
 	ctx context.Context,
@@ -415,5 +419,52 @@ func (r *MachineImageSyncerReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	//nolint:wrapcheck // This is generated code.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubernetesupgraderv1.MachineImageSyncer{}).
+		Owns(&kubernetesupgraderv1.MachineImage{}).
+		Watches(
+			&kubernetesupgraderv1.MachineImageTemplate{},
+			handler.EnqueueRequestsFromMapFunc(r.machineImageTemplateMapper),
+		).
 		Complete(r)
+}
+
+//nolint:dupl // Prefer readability to DRY.
+func (r *MachineImageSyncerReconciler) machineImageTemplateMapper(
+	ctx context.Context,
+	o client.Object,
+) []reconcile.Request {
+	template, ok := o.(*kubernetesupgraderv1.MachineImageTemplate)
+	logger := log.FromContext(ctx).
+		WithValues("plan", template.Name, "namespace", template.Namespace)
+
+	if !ok {
+		//nolint:goerr113 // This is a user facing error.
+		logger.Error(
+			fmt.Errorf("expected a MachineImageTemplate but got a %T", template),
+			"failed to reconcile object",
+		)
+		return nil
+	}
+
+	syncers := &kubernetesupgraderv1.MachineImageSyncerList{}
+	listOps := &client.ListOptions{
+		Namespace: template.GetNamespace(),
+	}
+	err := r.List(ctx, syncers, listOps)
+	if err != nil {
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, 0)
+	for i := range syncers.Items {
+		item := syncers.Items[i]
+		if item.Spec.MachineImageTemplateRef.Name == template.GetName() {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      item.GetName(),
+					Namespace: item.GetNamespace(),
+				},
+			})
+		}
+	}
+	return requests
 }

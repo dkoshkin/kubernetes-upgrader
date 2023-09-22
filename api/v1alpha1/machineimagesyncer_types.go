@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +54,11 @@ type MachineImageSyncerSpec struct {
 	// MachineImageTemplateRef is a reference to a MachineImageTemplate object.
 	// +required
 	MachineImageTemplateRef corev1.ObjectReference `json:"machineImageTemplateRef"`
+
+	// Interval is the time between checks for new versions from the source.
+	// Defaults to 1h.
+	// +optional
+	Interval *time.Duration `json:"interval,omitempty"`
 }
 
 func (s *MachineImageSyncerSpec) GetVersionsFromSource(
