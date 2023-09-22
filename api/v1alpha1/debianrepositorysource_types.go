@@ -54,6 +54,7 @@ type DebianRepositorySourceStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:categories=cluster-api
+//+kubebuilder:printcolumn:name="Versions",type="string",JSONPath=`.status.versions`
 
 // DebianRepositorySource is the Schema for the debianrepositorysources API.
 type DebianRepositorySource struct {

@@ -16,7 +16,11 @@ spec:
     singular: debianrepositorysource
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.versions
+      name: Versions
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: DebianRepositorySource is the Schema for the debianrepositorysources
