@@ -9,7 +9,7 @@ spec:
   group: kubernetesupgraded.dimitrikoshkin.com
   names:
     categories:
-    - cluster-api
+    - kubernetes-upgrader
     kind: ClusterClassClusterUpgrader
     listKind: ClusterClassClusterUpgraderList
     plural: clusterclassclusterupgraders

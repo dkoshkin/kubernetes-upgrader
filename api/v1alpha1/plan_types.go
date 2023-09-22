@@ -66,7 +66,7 @@ type MachineImageDetails struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:categories=cluster-api
+//+kubebuilder:resource:categories=kubernetes-upgrader
 //+kubebuilder:printcolumn:name="Version Range",type="string",JSONPath=`.spec.versionRange`
 //+kubebuilder:printcolumn:name="Latest Version",type="string",JSONPath=`.status.machineImageDetails.version`
 
