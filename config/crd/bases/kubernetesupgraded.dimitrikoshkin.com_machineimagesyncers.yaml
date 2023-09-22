@@ -41,6 +41,11 @@ spec:
           spec:
             description: MachineImageSyncerSpec defines the desired state of MachineImageSyncer.
             properties:
+              interval:
+                description: Interval is the time between checks for new versions
+                  from the source. Defaults to 1h.
+                format: int64
+                type: integer
               machineImageTemplateRef:
                 description: MachineImageTemplateRef is a reference to a MachineImageTemplate
                   object.

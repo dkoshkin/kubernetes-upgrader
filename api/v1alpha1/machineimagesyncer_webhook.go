@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -57,6 +58,10 @@ func (r *MachineImageSyncer) Default() {
 
 	if r.Spec.MachineImageTemplateRef.Namespace == "" {
 		r.Spec.MachineImageTemplateRef.Namespace = r.Namespace
+	}
+
+	if r.Spec.Interval == nil {
+		r.Spec.Interval = pointer.Duration(MachineImageSyncerInterval)
 	}
 }
 

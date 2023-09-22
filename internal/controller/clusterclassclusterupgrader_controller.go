@@ -75,7 +75,7 @@ type ClusterClassClusterUpgraderReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 //
-//nolint:dupl // Prefer readability over DRY.
+//nolint:dupl // Prefer readability to DRY.
 func (r *ClusterClassClusterUpgraderReconciler) Reconcile(
 	ctx context.Context,
 	req ctrl.Request,
@@ -325,12 +325,13 @@ func (r *ClusterClassClusterUpgraderReconciler) SetupWithManager(mgr ctrl.Manage
 		For(&kubernetesupgraderv1.ClusterClassClusterUpgrader{}).
 		Watches(
 			&kubernetesupgraderv1.Plan{},
-			handler.EnqueueRequestsFromMapFunc(r.findObjectsForPlan),
+			handler.EnqueueRequestsFromMapFunc(r.planMapper),
 		).
 		Complete(r)
 }
 
-func (r *ClusterClassClusterUpgraderReconciler) findObjectsForPlan(
+//nolint:dupl // Prefer readability to DRY.
+func (r *ClusterClassClusterUpgraderReconciler) planMapper(
 	ctx context.Context,
 	o client.Object,
 ) []reconcile.Request {
