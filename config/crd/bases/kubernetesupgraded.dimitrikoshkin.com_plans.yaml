@@ -23,6 +23,9 @@ spec:
     - jsonPath: .status.machineImageDetails.version
       name: Latest Version
       type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -154,6 +157,10 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              phase:
+                description: Phase represents the current phase of image building
+                  E.g. NoSuitableMachineImage, FoundMachineImage.
+                type: string
             required:
             - machineImageDetails
             - machineImageRef
