@@ -40,6 +40,10 @@ type MachineImageSyncerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Paused can be used to prevent controllers from processing the object.
+	// +optional
+	Paused bool `json:"paused,omitempty"`
+
 	// VersionRange gives a semver range of the Kubernetes version.
 	// New MachineImages will be created for all versions within the range.
 	// +required
