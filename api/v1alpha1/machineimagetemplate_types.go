@@ -57,7 +57,7 @@ type MachineImageTemplateStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:categories=kubernetes-upgrader
+//+kubebuilder:resource:categories=cluster-upgrader
 
 // MachineImageTemplate is the Schema for the machineimagetemplates API.
 type MachineImageTemplate struct {

@@ -80,7 +80,7 @@ type ClusterClassClusterUpgraderStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:categories=kubernetes-upgrader
+//+kubebuilder:resource:categories=cluster-upgrader
 //+kubebuilder:printcolumn:name="Cluster Name",type="string",JSONPath=`.spec.clusterName`
 //+kubebuilder:printcolumn:name="Latest Set Version",type="string",JSONPath=`.status.latestSetVersion`
 

@@ -74,7 +74,7 @@ type MachineImageStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:categories=kubernetes-upgrader
+//+kubebuilder:resource:categories=cluster-upgrader
 //+kubebuilder:printcolumn:name="ID",type="string",JSONPath=`.spec.id`
 //+kubebuilder:printcolumn:name="Version",type="string",JSONPath=`.spec.version`
 //+kubebuilder:printcolumn:name="Ready",type="string",JSONPath=`.status.ready`

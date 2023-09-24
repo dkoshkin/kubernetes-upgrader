@@ -53,7 +53,7 @@ type DebianRepositorySourceStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:categories=kubernetes-upgrader
+//+kubebuilder:resource:categories=cluster-upgrader
 
 // DebianRepositorySource is the Schema for the debianrepositorysources API.
 type DebianRepositorySource struct {

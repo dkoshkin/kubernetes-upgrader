@@ -119,7 +119,7 @@ type MachineImageSyncerStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:categories=kubernetes-upgrader
+//+kubebuilder:resource:categories=cluster-upgrader
 //+kubebuilder:printcolumn:name="Latest Version",type="string",JSONPath=`.status.latestVersion`
 
 // MachineImageSyncer is the Schema for the machineimagesyncers API.

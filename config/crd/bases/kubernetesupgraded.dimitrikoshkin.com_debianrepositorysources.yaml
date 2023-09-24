@@ -9,7 +9,7 @@ spec:
   group: kubernetesupgraded.dimitrikoshkin.com
   names:
     categories:
-    - kubernetes-upgrader
+    - cluster-upgrader
     kind: DebianRepositorySource
     listKind: DebianRepositorySourceList
     plural: debianrepositorysources
