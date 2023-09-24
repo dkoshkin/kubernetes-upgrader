@@ -9,7 +9,7 @@ spec:
   group: kubernetesupgraded.dimitrikoshkin.com
   names:
     categories:
-    - kubernetes-upgrader
+    - cluster-upgrader
     kind: MachineImageSyncer
     listKind: MachineImageSyncerList
     plural: machineimagesyncers
