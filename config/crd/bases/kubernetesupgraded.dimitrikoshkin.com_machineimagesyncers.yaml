@@ -84,6 +84,10 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              paused:
+                description: Paused can be used to prevent controllers from processing
+                  the object.
+                type: boolean
               sourceRef:
                 description: SourceRef is a reference to a type that satisfies the
                   Source contract. Expects status.versions to be a list of version

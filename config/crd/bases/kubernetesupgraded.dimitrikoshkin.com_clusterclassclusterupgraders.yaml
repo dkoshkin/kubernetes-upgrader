@@ -49,6 +49,10 @@ spec:
                 description: ClusterName is the name of the cluster to upgrade.
                 minLength: 1
                 type: string
+              paused:
+                description: Paused can be used to prevent controllers from processing
+                  the object.
+                type: boolean
               planRef:
                 description: PlanRef is a reference to a Plan object.
                 properties:

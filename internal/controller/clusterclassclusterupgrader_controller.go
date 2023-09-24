@@ -112,6 +112,11 @@ func (r *ClusterClassClusterUpgraderReconciler) Reconcile(
 		}
 	}()
 
+	if clusterUpgrader.Spec.Paused {
+		logger.Info("Reconciliation is paused for this object")
+		return ctrl.Result{}, nil
+	}
+
 	// Handle deleted clusters
 	if !clusterUpgrader.DeletionTimestamp.IsZero() {
 		return r.reconcileDelete(ctx, logger, clusterUpgrader)
@@ -319,10 +324,14 @@ func patchClusterClassClusterUpgrader(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ClusterClassClusterUpgraderReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ClusterClassClusterUpgraderReconciler) SetupWithManager(
+	ctx context.Context,
+	mgr ctrl.Manager,
+) error {
 	//nolint:wrapcheck // No additional context to add.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubernetesupgraderv1.ClusterClassClusterUpgrader{}).
+		WithEventFilter(ResourceNotPaused(ctrl.LoggerFrom(ctx))).
 		Watches(
 			&kubernetesupgraderv1.Plan{},
 			handler.EnqueueRequestsFromMapFunc(r.planMapper),

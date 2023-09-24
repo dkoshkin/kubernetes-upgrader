@@ -103,6 +103,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create a Context shared by the manager and reconcilers
+	ctx := ctrl.SetupSignalHandler()
+
 	if err = (&controller.MachineImageReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
@@ -127,7 +130,7 @@ func main() {
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("machineimagesyncer-reconciler"),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MachineImageSyncer")
 		os.Exit(1)
 	}
@@ -139,7 +142,7 @@ func main() {
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("clusterclassclusterupgrader-reconciler"),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(
 			err,
 			"unable to create controller",
@@ -171,8 +174,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	setupLog.Info("Starting manager")
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

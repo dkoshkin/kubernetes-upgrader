@@ -121,6 +121,11 @@ func (r *MachineImageSyncerReconciler) Reconcile(
 		}
 	}()
 
+	if machineImageSyncer.Spec.Paused {
+		logger.Info("Reconciliation is paused for this object")
+		return ctrl.Result{}, nil
+	}
+
 	// Handle deleted clusters
 	if !machineImageSyncer.DeletionTimestamp.IsZero() {
 		return r.reconcileDelete(ctx, logger, machineImageSyncer)
@@ -415,10 +420,14 @@ func patchMachineImageSyncer(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *MachineImageSyncerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MachineImageSyncerReconciler) SetupWithManager(
+	ctx context.Context,
+	mgr ctrl.Manager,
+) error {
 	//nolint:wrapcheck // This is generated code.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubernetesupgraderv1.MachineImageSyncer{}).
+		WithEventFilter(ResourceNotPaused(ctrl.LoggerFrom(ctx))).
 		Owns(&kubernetesupgraderv1.MachineImage{}).
 		Watches(
 			&kubernetesupgraderv1.MachineImageTemplate{},

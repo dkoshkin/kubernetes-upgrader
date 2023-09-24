@@ -37,6 +37,10 @@ type ClusterClassClusterUpgraderSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Paused can be used to prevent controllers from processing the object.
+	// +optional
+	Paused bool `json:"paused,omitempty"`
+
 	// ClusterName is the name of the cluster to upgrade.
 	// +required
 	// +kubebuilder:validation:MinLength=1
