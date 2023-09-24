@@ -34,11 +34,11 @@ type MachineImageTemplateSpec struct {
 
 	// Template is the MachineImage template to use when building the image.
 	// +required
-	Template MachineImageSyncerResource `json:"template"`
+	Template MachineImageTemplateResource `json:"template"`
 }
 
-// MachineImageSyncerResource defines the Template structure.
-type MachineImageSyncerResource struct {
+// MachineImageTemplateResource defines the Template structure.
+type MachineImageTemplateResource struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
