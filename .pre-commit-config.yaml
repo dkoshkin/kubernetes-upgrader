@@ -9,7 +9,6 @@ repos:
         entry: make lint
         language: system
         files: "(.*\\.go|go.mod|go.sum)$"
-        exclude: ^api/v1alpha1/zz_generated.deepcopy.go$
         pass_filenames: false
   - repo: https://github.com/tekwizely/pre-commit-golang
     rev: v1.0.0-rc.1

@@ -62,9 +62,9 @@ endif
 .PHONY: lint.%
 lint.%: ## Runs golangci-lint for a specific module
 lint.%: install-tool.golangci-lint install-tool.go.golines; $(info $(M) linting $* module)
-	$(if $(filter-out root,$*),cd $* && )golines -w .
+	# TODO(dkoskhin): remove --ignored-dirs if there is a better way to ignore zz_generated.deepcopy.go
+	$(if $(filter-out root,$*),cd $* && )golines -w . --ignored-dirs=api
 	$(if $(filter-out root,$*),cd $* && )golangci-lint run --fix --config=$(GOLANGCI_CONFIG_FILE)
-	$(if $(filter-out root,$*),cd $* && )go fix ./...
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
