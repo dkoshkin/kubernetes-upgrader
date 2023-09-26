@@ -111,6 +111,7 @@ func (r *MachineImageReconciler) Reconcile(
 	return r.reconcileNormal(ctx, logger, machineImage)
 }
 
+//nolint:funlen // TODO(dkoshkin): Refactor.
 func (r *MachineImageReconciler) reconcileNormal(
 	ctx context.Context,
 	logger logr.Logger,
@@ -121,7 +122,25 @@ func (r *MachineImageReconciler) reconcileNormal(
 	jobManager := jobs.NewManager(r.Client, r.Scheme)
 
 	logger.Info("Checking if job already exists")
-	if machineImage.Status.JobRef != nil {
+	// Before doing anything check if a Job already exists.
+	// If a job(s) does exist, use the latest one.
+	latestJob, err := jobManager.Latest(ctx, machineImage)
+	if err != nil {
+		r.Recorder.Eventf(
+			machineImage,
+			corev1.EventTypeWarning,
+			"GetLatestJobsError",
+			"Error getting latest Job: %s",
+			err,
+		)
+		//nolint:wrapcheck // No additional context to add.
+		return ctrl.Result{}, err
+	}
+	if latestJob != nil {
+		// This is needed to avoid a race condition of multiple Jobs getting created.
+		// It's possible that the machineImage that is being reconciled does not have the job reference set.
+		// Always set the reference to the first Job in the list.
+		machineImage.Status.JobRef = latestJob
 		return r.handleJob(ctx, logger, machineImage, jobManager)
 	}
 
@@ -152,6 +171,7 @@ func (r *MachineImageReconciler) reconcileNormal(
 		//nolint:wrapcheck // No additional context to add.
 		return ctrl.Result{}, err
 	}
+	logger.Info("Created a new Job", "name", jobRef.Name)
 	machineImage.Status.JobRef = jobRef
 	machineImage.Status.Phase = kubernetesupgraderv1.MachineImagePhaseBuilding
 

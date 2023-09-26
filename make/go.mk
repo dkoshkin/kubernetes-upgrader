@@ -35,6 +35,8 @@ define go_test
 endef
 
 .PHONY: test
+test: manifests generate fmt vet envtest
+test: export KUBEBUILDER_ASSETS=$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)
 test: ## Runs go tests for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
 test: test.root

@@ -25,14 +25,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -44,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
+	"github.com/dkoshkin/kubernetes-upgrader/internal/kubernetes"
 	"github.com/dkoshkin/kubernetes-upgrader/internal/policy"
 )
 
@@ -323,7 +321,7 @@ func (r *MachineImageSyncerReconciler) reconcileCreateMachineImageAndWait(
 	machineImage *kubernetesupgraderv1.MachineImage,
 ) (ctrl.Result, error) {
 	kubernetesVersion := machineImage.Spec.Version
-	err := createMachineImageAndWait(ctx, r.Client, machineImage)
+	err := kubernetes.CreateAndWait(ctx, r.Client, machineImage)
 	if err != nil {
 		logger.Error(err, "unable to create MachineImage", "version", kubernetesVersion)
 		r.Recorder.Eventf(
@@ -334,7 +332,7 @@ func (r *MachineImageSyncerReconciler) reconcileCreateMachineImageAndWait(
 			kubernetesVersion,
 			err,
 		)
-
+		//nolint:wrapcheck // No additional context to add.
 		return ctrl.Result{RequeueAfter: machineImageSyncerCreateMachineImageRequeue}, err
 	}
 
@@ -349,51 +347,6 @@ func (r *MachineImageSyncerReconciler) reconcileCreateMachineImageAndWait(
 	machineImageSyncer.Status.LatestVersion = kubernetesVersion
 
 	return ctrl.Result{}, nil
-}
-
-// createMachineImageFAndWait creates a new MachineImage.
-// It waits for the cache to be updated with the newly created MachineImage.
-func createMachineImageAndWait(
-	ctx context.Context,
-	k8sClient client.Client,
-	machineImage *kubernetesupgraderv1.MachineImage,
-) error {
-	err := k8sClient.Create(ctx, machineImage)
-	if err != nil {
-		return fmt.Errorf("error creating MachineImage: %w", err)
-	}
-
-	// Keep trying to get the MachineImage.
-	// This will force the cache to update and prevent any future reconciliation of the MachineImageSyncer
-	// to reconcile with an outdated list of MachineImage,
-	// which could lead to unwanted creation of a duplicate MachineImage.
-	const (
-		interval = 100 * time.Millisecond
-		timeout  = 10 * time.Second
-	)
-	var pollErrors []error
-	if err = wait.PollUntilContextTimeout(
-		ctx, interval, timeout, true, func(ctx context.Context) (bool, error) {
-			if err = k8sClient.Get(
-				ctx,
-				client.ObjectKeyFromObject(machineImage),
-				&kubernetesupgraderv1.MachineImage{},
-			); err != nil {
-				// Do not return error here. Continue to poll even if we hit an error
-				// so that we avoid exiting because of transient errors like network flakes.
-				// Capture all the errors and return the aggregate error if the poll fails eventually.
-				pollErrors = append(pollErrors, err)
-				return false, nil
-			}
-			return true, nil
-		}); err != nil {
-		return errors.Wrapf(
-			kerrors.NewAggregate(pollErrors),
-			"failed to get the MachineImage %s after creation", machineImage.Name,
-		)
-	}
-
-	return nil
 }
 
 func (r *MachineImageSyncerReconciler) reconcileDelete(
