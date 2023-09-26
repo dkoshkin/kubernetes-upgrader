@@ -12,6 +12,7 @@ endif
 
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
+build-snapshot: manifests generate fmt vet
 build-snapshot: install-tool.goreleaser install-tool.golang ; $(info $(M) building snapshot $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		build \
@@ -23,6 +24,7 @@ build-snapshot: install-tool.goreleaser install-tool.golang ; $(info $(M) buildi
 
 .PHONY: release
 release: ## Builds a release with goreleaser
+release: manifests generate fmt vet
 release: install-tool.goreleaser install-tool.golang ; $(info $(M) building release $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		release \
@@ -33,6 +35,7 @@ release: install-tool.goreleaser install-tool.golang ; $(info $(M) building rele
 
 .PHONY: release-snapshot
 release-snapshot: ## Builds a snapshot release with goreleaser
+release-snapshot: manifests generate fmt vet
 release-snapshot: install-tool.goreleaser install-tool.golang ; $(info $(M) building snapshot release $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		release \

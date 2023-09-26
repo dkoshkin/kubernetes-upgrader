@@ -13,14 +13,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
+	"github.com/dkoshkin/kubernetes-upgrader/internal/kubernetes"
 )
 
 const (
-	ImageBuilderOwnedLabel = "image-builder.kubernetesupgraded.dimitrikoshkin.com/owned"
+	MachineImageNameLabel = "kubernetesupgraded.dimitrikoshkin.com/machine-image-name"
 
 	IDAnnotation = "kubernetesupgraded.dimitrikoshkin.com/image-id"
 )
@@ -31,17 +32,21 @@ type Manager interface {
 		owner *kubernetesupgraderv1.MachineImage,
 		spec *corev1.PodSpec,
 	) (*corev1.ObjectReference, error)
+	Latest(
+		ctx context.Context,
+		owner *kubernetesupgraderv1.MachineImage,
+	) (*corev1.ObjectReference, error)
 	Status(ctx context.Context, ref *corev1.ObjectReference) (*batchv1.JobStatus, string, error)
 	Delete(ctx context.Context, ref *corev1.ObjectReference) error
 }
 
 type ImageBuilderJobManager struct {
-	client runtimeclient.Client
+	client client.Client
 	scheme *runtime.Scheme
 }
 
-func NewManager(client runtimeclient.Client, scheme *runtime.Scheme) Manager {
-	return &ImageBuilderJobManager{client: client, scheme: scheme}
+func NewManager(k8sClient client.Client, scheme *runtime.Scheme) Manager {
+	return &ImageBuilderJobManager{client: k8sClient, scheme: scheme}
 }
 
 func (m *ImageBuilderJobManager) Create(
@@ -53,9 +58,7 @@ func (m *ImageBuilderJobManager) Create(
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-", owner.Name),
 			Namespace:    owner.Namespace,
-			Labels: map[string]string{
-				ImageBuilderOwnedLabel: "",
-			},
+			Labels:       machineImageNameLabelMap(owner),
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -69,12 +72,50 @@ func (m *ImageBuilderJobManager) Create(
 		return nil, fmt.Errorf("failed to set controller reference on job: %w", err)
 	}
 
-	err = m.client.Create(ctx, job)
+	err = kubernetes.CreateAndWait(ctx, m.client, job)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create image builder job: %w", err)
 	}
 
 	return toObjectReference(job), nil
+}
+
+// Latest will return the latest job (using createdAt timestamp) for the given owner.
+// Returns nil if no jobs exist.
+func (m *ImageBuilderJobManager) Latest(
+	ctx context.Context,
+	owner *kubernetesupgraderv1.MachineImage,
+) (*corev1.ObjectReference, error) {
+	selector, err := metav1.LabelSelectorAsSelector(
+		&metav1.LabelSelector{MatchLabels: machineImageNameLabelMap(owner)},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error converting labels to selector: %w", err)
+	}
+
+	jobs := &batchv1.JobList{}
+	opts := []client.ListOption{
+		client.InNamespace(owner.Namespace),
+		client.MatchingLabelsSelector{Selector: selector},
+	}
+	err = m.client.List(ctx, jobs, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list image builder jobs: %w", err)
+	}
+	if len(jobs.Items) == 0 {
+		return nil, nil
+	}
+
+	// Sort jobs by creation timestamp
+	latest := jobs.Items[0]
+	for i := range jobs.Items {
+		job := jobs.Items[i]
+		if job.CreationTimestamp.After(latest.CreationTimestamp.Time) {
+			latest = job
+		}
+	}
+
+	return toObjectReference(&latest), nil
 }
 
 // Status will return the status of the job and the image ID if it was built successfully.
@@ -121,5 +162,11 @@ func toObjectReference(job *batchv1.Job) *corev1.ObjectReference {
 		Name:            job.GetName(),
 		UID:             job.GetUID(),
 		ResourceVersion: job.GetResourceVersion(),
+	}
+}
+
+func machineImageNameLabelMap(owner *kubernetesupgraderv1.MachineImage) map[string]string {
+	return map[string]string{
+		MachineImageNameLabel: owner.Name,
 	}
 }
