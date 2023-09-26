@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.0 (2023-09-26)
+
+## What's Changed
+* fix: v in Latest Set Version in ClusterClassClusterUpgrader by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/68
+* fix: use kubernetes-upgrader categories by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/70
+* fix: set status.phase for Plan by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/71
+* fix: use more Watches in MachineImageSyncer by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/73
+* fix: use cluster-upgrader categories by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/74
+* feat: add spec.paused fields to MachineImageSyncer and ClusterClassClusterUpgrader by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/75
+* fix: use correct MachineImageTemplateResource struct name by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/76
+* fix: regenerate zz_generated.deepcopy.go and remove incompatible linter by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/77
+* chore(deps): Bump mfinelli/setup-shfmt from 2 to 3 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/78
+* chore(deps): Bump github.com/onsi/ginkgo/v2 from 2.12.0 to 2.12.1 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/79
+* fix: race condition where multiple Jobs are created by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/80
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.5.0...v0.6.0
+
 ## 0.5.0 (2023-09-20)
 
 ## What's Changed
