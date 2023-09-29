@@ -32,9 +32,9 @@ import (
 // log is for logging in this package.
 //
 //nolint:gochecknoglobals // This came from the Kubebuilder project.
-var clusterclassclusterupgraderlog = logf.Log.WithName("clusterclassclusterupgrader-resource")
+var inclusterupgradeautomationlog = logf.Log.WithName("inclusterupgradeautomation-resource")
 
-func (r *ClusterClassClusterUpgrader) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *InClusterUpgradeAutomation) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	//nolint:wrapcheck // This came from the Kubebuilder project.
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -43,13 +43,13 @@ func (r *ClusterClassClusterUpgrader) SetupWebhookWithManager(mgr ctrl.Manager) 
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 //nolint:lll // This is generated code.
-//+kubebuilder:webhook:path=/mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-clusterclassclusterupgrader,mutating=true,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=clusterclassclusterupgraders,verbs=create;update,versions=v1alpha1,name=mclusterclassclusterupgrader.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-inclusterupgradeautomation,mutating=true,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=inclusterupgradeautomations,verbs=create;update,versions=v1alpha1,name=minclusterupgradeautomation.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &ClusterClassClusterUpgrader{}
+var _ webhook.Defaulter = &InClusterUpgradeAutomation{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (r *ClusterClassClusterUpgrader) Default() {
-	clusterclassclusterupgraderlog.Info("default", "name", r.Name)
+func (r *InClusterUpgradeAutomation) Default() {
+	inclusterupgradeautomationlog.Info("default", "name", r.Name)
 
 	machineimagesyncerlog.Info("default", "name", r.Name)
 
@@ -60,13 +60,13 @@ func (r *ClusterClassClusterUpgrader) Default() {
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //nolint:lll // This is generated code.
-//+kubebuilder:webhook:path=/validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-clusterclassclusterupgrader,mutating=false,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=clusterclassclusterupgraders,verbs=create;update,versions=v1alpha1,name=vclusterclassclusterupgrader.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-inclusterupgradeautomation,mutating=false,failurePolicy=fail,sideEffects=None,groups=kubernetesupgraded.dimitrikoshkin.com,resources=inclusterupgradeautomations,verbs=create;update,versions=v1alpha1,name=vinclusterupgradeautomation.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &ClusterClassClusterUpgrader{}
+var _ webhook.Validator = &InClusterUpgradeAutomation{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *ClusterClassClusterUpgrader) ValidateCreate() (admission.Warnings, error) {
-	clusterclassclusterupgraderlog.Info("validate create", "name", r.Name)
+func (r *InClusterUpgradeAutomation) ValidateCreate() (admission.Warnings, error) {
+	inclusterupgradeautomationlog.Info("validate create", "name", r.Name)
 
 	if r.Spec.PlanRef.Name == "" {
 		//nolint:goerr113 // This is a user facing error.
@@ -83,18 +83,18 @@ func (r *ClusterClassClusterUpgrader) ValidateCreate() (admission.Warnings, erro
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *ClusterClassClusterUpgrader) ValidateUpdate(
+func (r *InClusterUpgradeAutomation) ValidateUpdate(
 	old runtime.Object,
 ) (admission.Warnings, error) {
-	clusterclassclusterupgraderlog.Info("validate update", "name", r.Name)
+	inclusterupgradeautomationlog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *ClusterClassClusterUpgrader) ValidateDelete() (admission.Warnings, error) {
-	clusterclassclusterupgraderlog.Info("validate delete", "name", r.Name)
+func (r *InClusterUpgradeAutomation) ValidateDelete() (admission.Warnings, error) {
+	inclusterupgradeautomationlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil, nil

@@ -4,16 +4,16 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.0
-  name: clusterclassclusterupgraders.kubernetesupgraded.dimitrikoshkin.com
+  name: inclusterupgradeautomations.kubernetesupgraded.dimitrikoshkin.com
 spec:
   group: kubernetesupgraded.dimitrikoshkin.com
   names:
     categories:
     - cluster-upgrader
-    kind: ClusterClassClusterUpgrader
-    listKind: ClusterClassClusterUpgraderList
-    plural: clusterclassclusterupgraders
-    singular: clusterclassclusterupgrader
+    kind: InClusterUpgradeAutomation
+    listKind: InClusterUpgradeAutomationList
+    plural: inclusterupgradeautomations
+    singular: inclusterupgradeautomation
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -26,7 +26,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ClusterClassClusterUpgrader is the Schema for the clusterclassclusterupgraders
+        description: InClusterUpgradeAutomation is the Schema for the inclusterupgradeautomations
           API.
         properties:
           apiVersion:
@@ -42,8 +42,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterClassClusterUpgraderSpec defines the desired state
-              of ClusterClassClusterUpgrader.
+            description: InClusterUpgradeAutomationSpec defines the desired state
+              of InClusterUpgradeAutomation.
             properties:
               clusterName:
                 description: ClusterName is the name of the cluster to upgrade.
@@ -99,8 +99,8 @@ spec:
             - planRef
             type: object
           status:
-            description: ClusterClassClusterUpgraderStatus defines the observed state
-              of ClusterClassClusterUpgrader.
+            description: InClusterUpgradeAutomationStatus defines the observed state
+              of InClusterUpgradeAutomation.
             properties:
               latestSetVersion:
                 description: LatestFoundVersion is the highest version within the

@@ -32,8 +32,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ClusterClassClusterUpgraderSpec defines the desired state of ClusterClassClusterUpgrader.
-type ClusterClassClusterUpgraderSpec struct {
+// InClusterUpgradeAutomationSpec defines the desired state of InClusterUpgradeAutomation.
+type InClusterUpgradeAutomationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -55,7 +55,7 @@ type ClusterClassClusterUpgraderSpec struct {
 	PlanRef corev1.ObjectReference `json:"planRef"`
 }
 
-func (s *ClusterClassClusterUpgraderSpec) GetPlan(
+func (s *InClusterUpgradeAutomationSpec) GetPlan(
 	ctx context.Context,
 	reader client.Reader,
 ) (*Plan, error) {
@@ -66,14 +66,14 @@ func (s *ClusterClassClusterUpgraderSpec) GetPlan(
 	}
 	err := reader.Get(ctx, key, plan)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Plan for ClusterClassClusterUpgrader: %w", err)
+		return nil, fmt.Errorf("error getting Plan for InClusterUpgradeAutomation: %w", err)
 	}
 
 	return plan, nil
 }
 
-// ClusterClassClusterUpgraderStatus defines the observed state of ClusterClassClusterUpgrader.
-type ClusterClassClusterUpgraderStatus struct {
+// InClusterUpgradeAutomationStatus defines the observed state of InClusterUpgradeAutomation.
+type InClusterUpgradeAutomationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -88,16 +88,16 @@ type ClusterClassClusterUpgraderStatus struct {
 //+kubebuilder:printcolumn:name="Cluster Name",type="string",JSONPath=`.spec.clusterName`
 //+kubebuilder:printcolumn:name="Latest Set Version",type="string",JSONPath=`.status.latestSetVersion`
 
-// ClusterClassClusterUpgrader is the Schema for the clusterclassclusterupgraders API.
-type ClusterClassClusterUpgrader struct {
+// InClusterUpgradeAutomation is the Schema for the inclusterupgradeautomations API.
+type InClusterUpgradeAutomation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterClassClusterUpgraderSpec   `json:"spec,omitempty"`
-	Status ClusterClassClusterUpgraderStatus `json:"status,omitempty"`
+	Spec   InClusterUpgradeAutomationSpec   `json:"spec,omitempty"`
+	Status InClusterUpgradeAutomationStatus `json:"status,omitempty"`
 }
 
-func (r *ClusterClassClusterUpgrader) GetCluster(
+func (r *InClusterUpgradeAutomation) GetCluster(
 	ctx context.Context,
 	reader client.Reader,
 ) (*clusterv1.Cluster, error) {
@@ -108,7 +108,7 @@ func (r *ClusterClassClusterUpgrader) GetCluster(
 	}
 	err := reader.Get(ctx, key, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Cluster for ClusterClassClusterUpgrader: %w", err)
+		return nil, fmt.Errorf("error getting Cluster for InClusterUpgradeAutomation: %w", err)
 	}
 
 	return cluster, nil
@@ -116,14 +116,14 @@ func (r *ClusterClassClusterUpgrader) GetCluster(
 
 //+kubebuilder:object:root=true
 
-// ClusterClassClusterUpgraderList contains a list of ClusterClassClusterUpgrader.
-type ClusterClassClusterUpgraderList struct {
+// InClusterUpgradeAutomationList contains a list of InClusterUpgradeAutomation.
+type InClusterUpgradeAutomationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ClusterClassClusterUpgrader `json:"items"`
+	Items           []InClusterUpgradeAutomation `json:"items"`
 }
 
 //nolint:gochecknoinits // This is required for the Kubebuilder tooling.
 func init() {
-	SchemeBuilder.Register(&ClusterClassClusterUpgrader{}, &ClusterClassClusterUpgraderList{})
+	SchemeBuilder.Register(&InClusterUpgradeAutomation{}, &InClusterUpgradeAutomationList{})
 }

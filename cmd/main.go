@@ -138,21 +138,21 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "MachineImageSyncer")
 		os.Exit(1)
 	}
-	if err = (&controller.ClusterClassClusterUpgraderReconciler{
+	if err = (&controller.InClusterUpgradeAutomationReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("clusterclassclusterupgrader-reconciler"),
+		Recorder: mgr.GetEventRecorderFor("inclusterupgradeautomation-reconciler"),
 	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(
 			err,
 			"unable to create controller",
 			"controller",
-			"ClusterClassClusterUpgrader",
+			"InClusterUpgradeAutomation",
 		)
 		os.Exit(1)
 	}
-	if err = (&kubernetesupgraderv1.ClusterClassClusterUpgrader{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterClassClusterUpgrader")
+	if err = (&kubernetesupgraderv1.InClusterUpgradeAutomation{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "InClusterUpgradeAutomation")
 		os.Exit(1)
 	}
 	if err = (&controller.DebianRepositorySourceReconciler{

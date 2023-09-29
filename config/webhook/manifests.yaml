@@ -10,9 +10,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-clusterclassclusterupgrader
+      path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-inclusterupgradeautomation
   failurePolicy: Fail
-  name: mclusterclassclusterupgrader.kb.io
+  name: minclusterupgradeautomation.kb.io
   rules:
   - apiGroups:
     - kubernetesupgraded.dimitrikoshkin.com
@@ -22,7 +22,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - clusterclassclusterupgraders
+    - inclusterupgradeautomations
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -76,9 +76,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-clusterclassclusterupgrader
+      path: /validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-inclusterupgradeautomation
   failurePolicy: Fail
-  name: vclusterclassclusterupgrader.kb.io
+  name: vinclusterupgradeautomation.kb.io
   rules:
   - apiGroups:
     - kubernetesupgraded.dimitrikoshkin.com
@@ -88,7 +88,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - clusterclassclusterupgraders
+    - inclusterupgradeautomations
   sideEffects: None
 - admissionReviewVersions:
   - v1

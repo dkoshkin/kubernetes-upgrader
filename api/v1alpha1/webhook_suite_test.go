@@ -109,7 +109,7 @@ var _ = BeforeSuite(func() {
 	err = (&MachineImageSyncer{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&ClusterClassClusterUpgrader{}).SetupWebhookWithManager(mgr)
+	err = (&InClusterUpgradeAutomation{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook
