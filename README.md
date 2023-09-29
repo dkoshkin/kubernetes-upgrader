@@ -24,7 +24,7 @@ The API and controllers design take inspiration from [Cluster API's](https://clu
 
 ### API Types
 
-![Architecture](https://lucid.app/publicSegments/view/7e0cdb4a-8908-48dc-87a1-5933652564df/image.png "Architecture")
+![Architecture](https://lucid.app/publicSegments/view/5801cb77-7daa-4d88-a2b1-c610ebda0e07/image.png "Architecture")
 
 -   `DebianRepositorySource` satisfies the `MachineImageSyncer` contract, fetching all available versions from a Kubernetes Debian repository and setting `status.versions`.
 -   `MachineImageTemplate` is a template for `MachineImage` used by `MachineImageSyncer`.
@@ -33,7 +33,7 @@ The API and controllers design take inspiration from [Cluster API's](https://clu
     but any tool can be used as long as it generates a Kubernetes machine image and labels the Job with `kubernetesupgraded.dimitrikoshkin.com/image-id`.
     The controller sets `status.ready` once the Job succeeds and copies the label value to `spec.id`.
 -   `Plan` finds the latest `MachineImage` with `spec.version` that is in `spec.versionRange` and matches an optional `machineImageSelector`. It then sets `status.machineImageDetails` with `version` and image `id`.
--   `ClusterClassClusterUpgrader` satisfies the Plan contract. It will update `spec.topology.version` and (an optional) field from `topologyVariable` of the CAPI Cluster, using the values from the Plan's `status.machineImageDetails`. .
+-   `InClusterUpgradeAutomation` satisfies the Plan contract. It will update `spec.topology.version` and (an optional) field from `topologyVariable` of the CAPI Cluster, using the values from the Plan's `status.machineImageDetails`. .
 
 ## Getting Started
 

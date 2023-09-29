@@ -6,7 +6,7 @@ resources:
 - bases/kubernetesupgraded.dimitrikoshkin.com_plans.yaml
 - bases/kubernetesupgraded.dimitrikoshkin.com_machineimagesyncers.yaml
 - bases/kubernetesupgraded.dimitrikoshkin.com_machineimagetemplates.yaml
-- bases/kubernetesupgraded.dimitrikoshkin.com_clusterclassclusterupgraders.yaml
+- bases/kubernetesupgraded.dimitrikoshkin.com_inclusterupgradeautomations.yaml
 - bases/kubernetesupgraded.dimitrikoshkin.com_debianrepositorysources.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
@@ -17,7 +17,7 @@ patches:
 #- path: patches/webhook_in_plans.yaml
 #- path: patches/webhook_in_machineimagesyncers.yaml
 #- path: patches/webhook_in_machineimagetemplates.yaml
-#- path: patches/webhook_in_clusterclassclusterupgraders.yaml
+#- path: patches/webhook_in_inclusterupgradeautomations.yaml
 #- path: patches/webhook_in_debianrepositorysources.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
@@ -27,7 +27,7 @@ patches:
 #- path: patches/cainjection_in_plans.yaml
 #- path: patches/cainjection_in_machineimagesyncers.yaml
 #- path: patches/cainjection_in_machineimagetemplates.yaml
-#- path: patches/cainjection_in_clusterclassclusterupgraders.yaml
+#- path: patches/cainjection_in_inclusterupgradeautomations.yaml
 #- path: patches/cainjection_in_debianrepositorysources.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 

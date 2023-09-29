@@ -42,14 +42,14 @@ spec:
       imageBuilderVersion: v1
 ---
 apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
-kind: ClusterClassClusterUpgrader
+kind: InClusterUpgradeAutomation
 metadata:
   labels:
-    app.kubernetes.io/name: clusterclassclusterupgrader
-    app.kubernetes.io/instance: clusterclassclusterupgrader-sample
+    app.kubernetes.io/name: inclusterupgradeautomation
+    app.kubernetes.io/instance: inclusterupgradeautomation-sample
     app.kubernetes.io/part-of: kubernetes-upgrader
     app.kubernetes.io/created-by: kubernetes-upgrader
-  name: clusterclassclusterupgrader-sample
+  name: inclusterupgradeautomation-sample
 spec:
   clusterName: capi-quickstart
   planRef:

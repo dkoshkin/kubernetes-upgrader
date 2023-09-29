@@ -1,20 +1,20 @@
-# permissions for end users to edit clusterclassclusterupgraders.
+# permissions for end users to edit inclusterupgradeautomations.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: clusterclassclusterupgrader-editor-role
+    app.kubernetes.io/instance: inclusterupgradeautomation-editor-role
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: kubernetes-upgrader
     app.kubernetes.io/part-of: kubernetes-upgrader
     app.kubernetes.io/managed-by: kustomize
-  name: clusterclassclusterupgrader-editor-role
+  name: inclusterupgradeautomation-editor-role
 rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - clusterclassclusterupgraders
+  - inclusterupgradeautomations
   verbs:
   - create
   - delete
@@ -26,6 +26,6 @@ rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - clusterclassclusterupgraders/status
+  - inclusterupgradeautomations/status
   verbs:
   - get

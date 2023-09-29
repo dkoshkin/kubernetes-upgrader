@@ -38,32 +38,6 @@ rules:
 - apiGroups:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
-  - clusterclassclusterupgraders
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - kubernetesupgraded.dimitrikoshkin.com
-  resources:
-  - clusterclassclusterupgraders/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kubernetesupgraded.dimitrikoshkin.com
-  resources:
-  - clusterclassclusterupgraders/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - kubernetesupgraded.dimitrikoshkin.com
-  resources:
   - debianrepositorysources
   verbs:
   - create
@@ -83,6 +57,32 @@ rules:
   - kubernetesupgraded.dimitrikoshkin.com
   resources:
   - debianrepositorysources/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - inclusterupgradeautomations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - inclusterupgradeautomations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kubernetesupgraded.dimitrikoshkin.com
+  resources:
+  - inclusterupgradeautomations/status
   verbs:
   - get
   - patch
