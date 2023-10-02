@@ -19,7 +19,7 @@ require (
 	k8s.io/client-go v0.28.2
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 	pault.ag/go/debian v0.15.0
-	sigs.k8s.io/cluster-api v1.5.1
+	sigs.k8s.io/cluster-api v1.5.2
 	sigs.k8s.io/controller-runtime v0.15.2
 )
 
