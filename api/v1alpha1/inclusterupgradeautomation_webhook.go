@@ -52,10 +52,6 @@ func (r *InClusterUpgradeAutomation) Default() {
 	inclusterupgradeautomationlog.Info("default", "name", r.Name)
 
 	machineimagesyncerlog.Info("default", "name", r.Name)
-
-	if r.Spec.PlanRef.Namespace == "" {
-		r.Spec.PlanRef.Namespace = r.Namespace
-	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -74,11 +70,6 @@ func (r *InClusterUpgradeAutomation) ValidateCreate() (admission.Warnings, error
 			fmt.Errorf("spec.planRef.name must be set")
 	}
 
-	if r.Namespace != r.Spec.PlanRef.Namespace {
-		//nolint:goerr113 // This is a user facing error.
-		return nil,
-			fmt.Errorf("spec.planRef.namespace must be in the same namespace")
-	}
 	return nil, nil
 }
 

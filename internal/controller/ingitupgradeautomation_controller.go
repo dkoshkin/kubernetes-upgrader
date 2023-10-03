@@ -22,7 +22,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,22 +39,18 @@ import (
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
 )
 
-const (
-	clusterUpgraderRequeueDelay = 1 * time.Minute
-)
-
-// InClusterUpgradeAutomationReconciler reconciles a InClusterUpgradeAutomation object.
-type InClusterUpgradeAutomationReconciler struct {
+// InGitUpgradeAutomationReconciler reconciles a InGitUpgradeAutomation object.
+type InGitUpgradeAutomationReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 }
 
 //nolint:lll // This is generated code.
-//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=inclusterupgradeautomations,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=inclusterupgradeautomations/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=inclusterupgradeautomations/finalizers,verbs=update
-//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch;update
+//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=ingitupgradeautomations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=ingitupgradeautomations/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=ingitupgradeautomations/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=plans,verbs=get;list;watch
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=plans/status,verbs=get
 //+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
@@ -63,7 +58,7 @@ type InClusterUpgradeAutomationReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the InClusterUpgradeAutomation object against the actual cluster state, and then
+// the InGitUpgradeAutomation object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
@@ -71,18 +66,18 @@ type InClusterUpgradeAutomationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 //
 //nolint:dupl // Prefer readability to DRY.
-func (r *InClusterUpgradeAutomationReconciler) Reconcile(
+func (r *InGitUpgradeAutomationReconciler) Reconcile(
 	ctx context.Context,
 	req ctrl.Request,
 ) (_ ctrl.Result, rerr error) {
 	logger := log.FromContext(ctx).
-		WithValues("inclusterupgradeautomation", req.Name, "namespace", req.Namespace)
+		WithValues("igitupgradeautomation", req.Name, "namespace", req.Namespace)
 
-	upgrader := &kubernetesupgraderv1.InClusterUpgradeAutomation{}
+	upgrader := &kubernetesupgraderv1.InGitUpgradeAutomation{}
 	if err := r.Get(ctx, req.NamespacedName, upgrader); err != nil {
 		logger.Error(
 			err,
-			"unable to fetch InClusterUpgradeAutomation",
+			"unable to fetch InGitUpgradeAutomation",
 			"namespace", req.Namespace, "name", req.Name)
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -99,8 +94,8 @@ func (r *InClusterUpgradeAutomationReconciler) Reconcile(
 	}
 	// Always attempt to Patch the MachineImage object and status after each reconciliation.
 	defer func() {
-		if err := patchInClusterUpgradeAutomation(ctx, patchHelper, upgrader); err != nil {
-			logger.Error(err, "failed to patch InClusterUpgradeAutomation")
+		if err := patchInGitUpgradeAutomation(ctx, patchHelper, upgrader); err != nil {
+			logger.Error(err, "failed to patch InGitUpgradeAutomation")
 			if rerr == nil {
 				rerr = err
 			}
@@ -121,24 +116,21 @@ func (r *InClusterUpgradeAutomationReconciler) Reconcile(
 	return r.reconcileNormal(ctx, logger, upgrader)
 }
 
-type inClusterUpgrader struct {
-	*kubernetesupgraderv1.InClusterUpgradeAutomation
-
-	k8sClient client.Client
+type inGitUpgrader struct {
+	*kubernetesupgraderv1.InGitUpgradeAutomation
 }
 
-func (u *inClusterUpgrader) UpgradeCluster(
-	ctx context.Context,
-	cluster *clusterv1.Cluster,
+func (i inGitUpgrader) UpgradeCluster(
+	_ context.Context,
+	_ *clusterv1.Cluster,
 ) error {
-	//nolint:wrapcheck // No additional context to add.
-	return u.k8sClient.Update(ctx, cluster)
+	panic("implement me")
 }
 
-func (r *InClusterUpgradeAutomationReconciler) reconcileNormal(
+func (r *InGitUpgradeAutomationReconciler) reconcileNormal(
 	ctx context.Context,
 	logger logr.Logger,
-	inClusterUpgradeAutomation *kubernetesupgraderv1.InClusterUpgradeAutomation,
+	inGitUpgraderAutomation *kubernetesupgraderv1.InGitUpgradeAutomation,
 ) (ctrl.Result, error) {
 	genericUpgrader := &genericUpgradeAutomationReconciler{
 		Client:   r.Client,
@@ -146,27 +138,26 @@ func (r *InClusterUpgradeAutomationReconciler) reconcileNormal(
 		Recorder: r.Recorder,
 	}
 
-	upgrader := &inClusterUpgrader{
-		InClusterUpgradeAutomation: inClusterUpgradeAutomation,
-		k8sClient:                  r.Client,
+	upgrader := &inGitUpgrader{
+		InGitUpgradeAutomation: inGitUpgraderAutomation,
 	}
 	return genericUpgrader.reconcileNormal(ctx, logger, upgrader)
 }
 
-func (r *InClusterUpgradeAutomationReconciler) reconcileDelete(
+func (r *InGitUpgradeAutomationReconciler) reconcileDelete(
 	_ context.Context,
 	logger logr.Logger,
-	_ *kubernetesupgraderv1.InClusterUpgradeAutomation,
+	_ *kubernetesupgraderv1.InGitUpgradeAutomation,
 ) (ctrl.Result, error) {
 	logger.Info("Reconciling delete")
 
 	return ctrl.Result{}, nil
 }
 
-func patchInClusterUpgradeAutomation(
+func patchInGitUpgradeAutomation(
 	ctx context.Context,
 	patchHelper *patch.Helper,
-	upgrader *kubernetesupgraderv1.InClusterUpgradeAutomation,
+	upgrader *kubernetesupgraderv1.InGitUpgradeAutomation,
 ) error {
 	// Patch the object, ignoring conflicts on the conditions owned by this controller.
 	//nolint:wrapcheck // This is generated code.
@@ -177,13 +168,13 @@ func patchInClusterUpgradeAutomation(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *InClusterUpgradeAutomationReconciler) SetupWithManager(
+func (r *InGitUpgradeAutomationReconciler) SetupWithManager(
 	ctx context.Context,
 	mgr ctrl.Manager,
 ) error {
 	//nolint:wrapcheck // No additional context to add.
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&kubernetesupgraderv1.InClusterUpgradeAutomation{}).
+		For(&kubernetesupgraderv1.InGitUpgradeAutomation{}).
 		WithEventFilter(ResourceNotPaused(ctrl.LoggerFrom(ctx))).
 		Watches(
 			&kubernetesupgraderv1.Plan{},
@@ -193,7 +184,7 @@ func (r *InClusterUpgradeAutomationReconciler) SetupWithManager(
 }
 
 //nolint:dupl // Prefer readability to DRY.
-func (r *InClusterUpgradeAutomationReconciler) planMapper(
+func (r *InGitUpgradeAutomationReconciler) planMapper(
 	ctx context.Context,
 	o client.Object,
 ) []reconcile.Request {
@@ -207,7 +198,7 @@ func (r *InClusterUpgradeAutomationReconciler) planMapper(
 		return nil
 	}
 
-	upgraders := &kubernetesupgraderv1.InClusterUpgradeAutomationList{}
+	upgraders := &kubernetesupgraderv1.InGitUpgradeAutomationList{}
 	listOps := &client.ListOptions{
 		Namespace: plan.GetNamespace(),
 	}

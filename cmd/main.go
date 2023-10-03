@@ -155,6 +155,14 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "InClusterUpgradeAutomation")
 		os.Exit(1)
 	}
+	if err = (&controller.InGitUpgradeAutomationReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("ingitupgradeautomation-reconciler"),
+	}).SetupWithManager(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "InGitUpgradeAutomation")
+		os.Exit(1)
+	}
 	if err = (&controller.DebianRepositorySourceReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),

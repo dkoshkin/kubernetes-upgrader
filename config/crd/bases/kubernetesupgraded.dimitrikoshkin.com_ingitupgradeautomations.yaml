@@ -1,0 +1,204 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.0
+  name: ingitupgradeautomations.kubernetesupgraded.dimitrikoshkin.com
+spec:
+  group: kubernetesupgraded.dimitrikoshkin.com
+  names:
+    categories:
+    - cluster-upgrader
+    kind: InGitUpgradeAutomation
+    listKind: InGitUpgradeAutomationList
+    plural: ingitupgradeautomations
+    singular: ingitupgradeautomation
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.clusterName
+      name: Cluster Name
+      type: string
+    - jsonPath: .status.latestSetVersion
+      name: Latest Set Version
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: InGitUpgradeAutomation is the Schema for the ingitupgradeautomations
+          API.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: InGitUpgradeAutomationSpec defines the desired state of InGitUpgradeAutomation.
+            properties:
+              clusterName:
+                description: ClusterName is the name of the cluster to upgrade.
+                minLength: 1
+                type: string
+              git:
+                description: GitSpec contains all the git-specific definitions.
+                properties:
+                  checkout:
+                    description: Checkout gives the parameters for cloning the git
+                      repository, ready to make changes.
+                    properties:
+                      ref:
+                        description: Branch to check out, defaults to 'main' if no
+                          other field is defined.
+                        properties:
+                          branch:
+                            default: main
+                            description: Branch to check out, defaults to 'main' if
+                              no other field is defined.
+                            type: string
+                        type: object
+                      secretRef:
+                        description: SecretRef specifies the Secret containing authentication
+                          credentials. For HTTPS repositories the Secret must contain
+                          'username' and 'password' fields for basic auth or 'bearerToken'
+                          field for token auth. For SSH repositories the Secret must
+                          contain 'identity' and 'known_hosts' fields.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      url:
+                        description: URL specifies the Git repository URL, it can
+                          be an HTTP/S or SSH address.
+                        pattern: ^(http|https|ssh)://.*$
+                        type: string
+                    required:
+                    - ref
+                    - secretRef
+                    - url
+                    type: object
+                  commit:
+                    description: Commit specifies how to commit to the git repository.
+                    properties:
+                      author:
+                        description: Author gives the email and optionally the name
+                          to use as the author of commits.
+                        properties:
+                          email:
+                            description: Email gives the email to provide when making
+                              a commit.
+                            type: string
+                          name:
+                            description: Name gives the name to provide when making
+                              a commit.
+                            type: string
+                        required:
+                        - email
+                        type: object
+                      messageTemplate:
+                        description: MessageTemplate provides a template for the commit
+                          message, into which will be interpolated the details of
+                          the change made.
+                        type: string
+                      signingKey:
+                        description: SigningKey provides the option to sign commits
+                          with a GPG key.
+                        properties:
+                          secretRef:
+                            description: SecretRef holds the name to a secret that
+                              contains a 'git.asc' key corresponding to the ASCII
+                              Armored file containing the GPG signing keypair as the
+                              value.
+                            properties:
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
+                    required:
+                    - author
+                    type: object
+                  push:
+                    description: Push specifies how and where to push commits made
+                      by the automation. If missing, commits are pushed (back) to
+                      `.spec.checkout.branch` or its default.
+                    properties:
+                      branch:
+                        description: Branch specifies that commits should be pushed
+                          to the branch named. The branch is created using `.spec.checkout.branch`
+                          as the starting point, if it doesn't already exist.
+                        type: string
+                    type: object
+                required:
+                - checkout
+                - commit
+                type: object
+              paused:
+                description: Paused can be used to prevent controllers from processing
+                  the object.
+                type: boolean
+              planRef:
+                description: PlanRef is a reference to a Plan object.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              topologyVariable:
+                description: TopologyVariable is the name of the topology variable
+                  to set with the MachineImage's ID.
+                type: string
+              update:
+                description: Update gives the specification for how to update the
+                  files in the repository.
+                properties:
+                  path:
+                    description: Path to the directory containing the manifests to
+                      be updated. Defaults to 'None', which translates to the root
+                      path of the GitRepositoryRef.
+                    type: string
+                  strategy:
+                    default: Setters
+                    description: Strategy names the strategy to be used.
+                    enum:
+                    - Setters
+                    type: string
+                required:
+                - strategy
+                type: object
+            required:
+            - clusterName
+            - git
+            - planRef
+            - update
+            type: object
+          status:
+            description: InGitUpgradeAutomationStatus defines the observed state of
+              InGitUpgradeAutomation.
+            properties:
+              latestSetVersion:
+                description: LatestFoundVersion is the highest version within the
+                  range that was set on the Cluster.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
