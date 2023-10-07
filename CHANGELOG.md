@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.1 (2023-10-07)
+
+## What's Changed
+* fix: rename API to InClusterUpgradeAutomation by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/83
+* chore(deps): Bump github.com/onsi/gomega from 1.27.10 to 1.28.0 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/85
+* chore(deps): Bump sigs.k8s.io/cluster-api from 1.5.1 to 1.5.2 by @dependabot in https://github.com/dkoshkin/kubernetes-upgrader/pull/86
+* fix: remove required Plan fields from the status by @dkoshkin in https://github.com/dkoshkin/kubernetes-upgrader/pull/87
+
+
+**Full Changelog**: https://github.com/dkoshkin/kubernetes-upgrader/compare/v0.6.0...v0.6.1
+
 ## 0.6.0 (2023-09-26)
 
 ## What's Changed
