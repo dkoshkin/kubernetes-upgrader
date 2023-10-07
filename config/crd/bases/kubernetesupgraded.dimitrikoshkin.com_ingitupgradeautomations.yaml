@@ -73,8 +73,12 @@ spec:
                           contain 'identity' and 'known_hosts' fields.
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            description: name is unique within a namespace to reference
+                              a secret resource.
+                            type: string
+                          namespace:
+                            description: namespace defines the space within which
+                              the secret name must be unique.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -84,7 +88,6 @@ spec:
                         pattern: ^(http|https|ssh)://.*$
                         type: string
                     required:
-                    - ref
                     - secretRef
                     - url
                     type: object
@@ -98,6 +101,7 @@ spec:
                           email:
                             description: Email gives the email to provide when making
                               a commit.
+                            minLength: 1
                             type: string
                           name:
                             description: Name gives the name to provide when making
@@ -107,9 +111,8 @@ spec:
                         - email
                         type: object
                       messageTemplate:
-                        description: MessageTemplate provides a template for the commit
-                          message, into which will be interpolated the details of
-                          the change made.
+                        description: MessageTemplate provides the commit message template.
+                        minLength: 1
                         type: string
                       signingKey:
                         description: SigningKey provides the option to sign commits
@@ -131,6 +134,7 @@ spec:
                         type: object
                     required:
                     - author
+                    - messageTemplate
                     type: object
                   push:
                     description: Push specifies how and where to push commits made
@@ -139,7 +143,7 @@ spec:
                     properties:
                       branch:
                         description: Branch specifies that commits should be pushed
-                          to the branch named. The branch is created using `.spec.checkout.branch`
+                          to the branch named. The branch is created using `.spec.git.checkout.ref.branch`
                           as the starting point, if it doesn't already exist.
                         type: string
                     type: object
@@ -169,18 +173,11 @@ spec:
                   files in the repository.
                 properties:
                   path:
-                    description: Path to the directory containing the manifests to
-                      be updated. Defaults to 'None', which translates to the root
-                      path of the GitRepositoryRef.
-                    type: string
-                  strategy:
-                    default: Setters
-                    description: Strategy names the strategy to be used.
-                    enum:
-                    - Setters
+                    description: Path to the file containing the manifests to be updated.
+                    minLength: 1
                     type: string
                 required:
-                - strategy
+                - path
                 type: object
             required:
             - clusterName

@@ -25,7 +25,7 @@ import (
 )
 
 type clusterUpgrader interface {
-	UpgradeCluster(ctx context.Context, cluster *clusterv1.Cluster) error
+	UpgradeCluster(ctx context.Context, logger logr.Logger, cluster *clusterv1.Cluster) error
 
 	GetCluster(ctx context.Context, reader client.Reader) (*clusterv1.Cluster, error)
 	GetPlan(ctx context.Context, reader client.Reader) (*kubernetesupgraderv1.Plan, error)
@@ -174,7 +174,7 @@ func (r *genericUpgradeAutomationReconciler) reconcileNormal(
 	}
 
 	// Update the Cluster after updating the version and topology variable value.
-	err = upgrader.UpgradeCluster(ctx, cluster)
+	err = upgrader.UpgradeCluster(ctx, logger, cluster)
 	if err != nil {
 		r.Recorder.Eventf(
 			plan,

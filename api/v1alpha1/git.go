@@ -10,10 +10,12 @@ import (
 type GitSpec struct {
 	// Checkout gives the parameters for cloning the git repository, ready to make changes.
 	// +required
+	//+kubebuilder:validation:Required
 	Checkout GitCheckoutSpec `json:"checkout"`
 
 	// Commit specifies how to commit to the git repository.
 	// +required
+	//+kubebuilder:validation:Required
 	Commit CommitSpec `json:"commit"`
 
 	// Push specifies how and where to push commits made by the automation.
@@ -24,8 +26,8 @@ type GitSpec struct {
 
 type GitCheckoutSpec struct {
 	// URL specifies the Git repository URL, it can be an HTTP/S or SSH address.
-	// +kubebuilder:validation:Pattern="^(http|https|ssh)://.*$"
 	// +required
+	// +kubebuilder:validation:Pattern="^(http|https|ssh)://.*$"
 	URL string `json:"url"`
 
 	// SecretRef specifies the Secret containing authentication credentials.
@@ -33,10 +35,11 @@ type GitCheckoutSpec struct {
 	// or 'bearerToken' field for token auth.
 	// For SSH repositories the Secret must contain 'identity' and 'known_hosts' fields.
 	// +required
-	SecretRef corev1.LocalObjectReference `json:"secretRef"`
+	//+kubebuilder:validation:Required
+	SecretRef corev1.SecretReference `json:"secretRef"`
 
 	// Branch to check out, defaults to 'main' if no other field is defined.
-	// +required
+	// +optional
 	Reference GitRepositoryRef `json:"ref"`
 }
 
@@ -52,14 +55,15 @@ type GitRepositoryRef struct {
 type CommitSpec struct {
 	// Author gives the email and optionally the name to use as the author of commits.
 	// +required
+	//+kubebuilder:validation:Required
 	Author CommitUser `json:"author"`
 	// SigningKey provides the option to sign commits with a GPG key.
 	// +optional
 	SigningKey *SigningKey `json:"signingKey,omitempty"`
-	// MessageTemplate provides a template for the commit message,
-	// into which will be interpolated the details of the change made.
-	// +optional
-	MessageTemplate string `json:"messageTemplate,omitempty"`
+	// MessageTemplate provides the commit message template.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	MessageTemplate string `json:"messageTemplate"`
 }
 
 type CommitUser struct {
@@ -68,6 +72,7 @@ type CommitUser struct {
 	Name string `json:"name,omitempty"`
 	// Email gives the email to provide when making a commit.
 	// +required
+	// +kubebuilder:validation:MinLength=1
 	Email string `json:"email"`
 }
 
@@ -76,25 +81,14 @@ type SigningKey struct {
 	// SecretRef holds the name to a secret that contains a 'git.asc' key
 	// corresponding to the ASCII Armored file containing the GPG signing keypair as the value.
 	// +required
+	//+kubebuilder:validation:Required
 	SecretRef corev1.LocalObjectReference `json:"secretRef,omitempty"`
 }
 
 // PushSpec specifies how and where to push commits.
 type PushSpec struct {
 	// Branch specifies that commits should be pushed to the branch named.
-	// The branch is created using `.spec.checkout.branch` as the starting point, if it doesn't already exist.
+	// The branch is created using `.spec.git.checkout.ref.branch` as the starting point, if it doesn't already exist.
 	// +optional
 	Branch string `json:"branch,omitempty"`
-
-	// Refspec specifies the Git Refspec to use for a push operation.
-	// If both Branch and Refspec are provided, then the commit is pushed to the branch
-	// and also using the specified refspec.
-	// For more details about Git Refspecs, see: https://git-scm.com/book/en/v2/Git-Internals-The-Refspec
-	// +optional
-	// Refspec string `json:"refspec,omitempty"`
-
-	// Options specifies the push options that are sent to the Git server when performing a push operation.
-	// For details, see: https://git-scm.com/docs/git-push#Documentation/git-push.txt---push-optionltoptiongt
-	// +optional
-	// Options map[string]string `json:"options,omitempty"`
 }

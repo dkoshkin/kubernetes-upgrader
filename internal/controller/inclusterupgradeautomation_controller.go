@@ -129,6 +129,7 @@ type inClusterUpgrader struct {
 
 func (u *inClusterUpgrader) UpgradeCluster(
 	ctx context.Context,
+	_ logr.Logger,
 	cluster *clusterv1.Cluster,
 ) error {
 	//nolint:wrapcheck // No additional context to add.
@@ -140,16 +141,17 @@ func (r *InClusterUpgradeAutomationReconciler) reconcileNormal(
 	logger logr.Logger,
 	inClusterUpgradeAutomation *kubernetesupgraderv1.InClusterUpgradeAutomation,
 ) (ctrl.Result, error) {
+	upgrader := &inClusterUpgrader{
+		InClusterUpgradeAutomation: inClusterUpgradeAutomation,
+		k8sClient:                  r.Client,
+	}
+
 	genericUpgrader := &genericUpgradeAutomationReconciler{
 		Client:   r.Client,
 		Scheme:   r.Scheme,
 		Recorder: r.Recorder,
 	}
 
-	upgrader := &inClusterUpgrader{
-		InClusterUpgradeAutomation: inClusterUpgradeAutomation,
-		k8sClient:                  r.Client,
-	}
 	return genericUpgrader.reconcileNormal(ctx, logger, upgrader)
 }
 

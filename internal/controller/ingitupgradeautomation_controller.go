@@ -20,11 +20,22 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+	"text/template"
+	"time"
 
+	fluxgit "github.com/fluxcd/pkg/git"
+	"github.com/fluxcd/pkg/git/gogit"
+	"github.com/fluxcd/pkg/git/repository"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -35,8 +46,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/yaml"
 
 	kubernetesupgraderv1 "github.com/dkoshkin/kubernetes-upgrader/api/v1alpha1"
+	"github.com/dkoshkin/kubernetes-upgrader/internal/git"
+)
+
+const (
+	getAuthCredentialsRequeueDelay = 1 * time.Minute
 )
 
 // InGitUpgradeAutomationReconciler reconciles a InGitUpgradeAutomation object.
@@ -54,6 +71,7 @@ type InGitUpgradeAutomationReconciler struct {
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=plans,verbs=get;list;watch
 //+kubebuilder:rbac:groups=kubernetesupgraded.dimitrikoshkin.com,resources=plans/status,verbs=get
 //+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -118,28 +136,219 @@ func (r *InGitUpgradeAutomationReconciler) Reconcile(
 
 type inGitUpgrader struct {
 	*kubernetesupgraderv1.InGitUpgradeAutomation
+
+	gitClient *gogit.Client
+
+	cloneOpts    repository.CloneConfig
+	switchBranch bool
+	pushBranch   string
+
+	updateStrategy kubernetesupgraderv1.UpdateStrategy
+	commitSpec     kubernetesupgraderv1.CommitSpec
 }
 
-func (i inGitUpgrader) UpgradeCluster(
-	_ context.Context,
-	_ *clusterv1.Cluster,
+func (i *inGitUpgrader) UpgradeCluster(
+	ctx context.Context,
+	logger logr.Logger,
+	cluster *clusterv1.Cluster,
 ) error {
-	panic("implement me")
+	// Clone the git repository.
+	logger.Info("Cloning git repository",
+		"url", i.Spec.Git.Checkout.URL,
+		"branch", i.cloneOpts.Branch,
+	)
+	_, err := i.gitClient.Clone(ctx, i.Spec.Git.Checkout.URL, i.cloneOpts)
+	if err != nil {
+		return fmt.Errorf("unable to clone git repository: %w", err)
+	}
+
+	// Switch the branch if needed.
+	if i.switchBranch {
+		logger.Info("Switching to branch", "branch", i.pushBranch)
+		err = i.gitClient.SwitchBranch(ctx, i.pushBranch)
+		if err != nil {
+			return fmt.Errorf("unable to switch branch: %w", err)
+		}
+	}
+
+	clusterBytes, err := yaml.Marshal(sanitizeClusterObject(cluster))
+	if err != nil {
+		return fmt.Errorf("unable to marshal Cluster to yaml: %w", err)
+	}
+	files := map[string]io.Reader{
+		i.updateStrategy.Path: bytes.NewReader(clusterBytes),
+	}
+	message, err := templateMessage(i.commitSpec.MessageTemplate, cluster)
+	if err != nil {
+		return fmt.Errorf("unable to template message: %w", err)
+	}
+	logger.Info("Committing updated file", "file", i.updateStrategy.Path)
+	_, err = i.gitClient.Commit(
+		fluxgit.Commit{
+			Author: fluxgit.Signature{
+				Name:  i.commitSpec.Author.Name,
+				Email: i.commitSpec.Author.Email,
+				When:  time.Now(),
+			},
+			Message: message,
+		},
+		repository.WithFiles(files),
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "no staged files") {
+			logger.Info("No changes to commit")
+			return nil
+		}
+		return fmt.Errorf("unable to commit changes: %w", err)
+	}
+
+	err = i.gitClient.Push(ctx, repository.PushConfig{})
+	if err != nil {
+		return fmt.Errorf("unable to push changes: %w", err)
+	}
+
+	return nil
 }
 
+// TODO(dkoshkin): Check if there is some utility function.
+// sanitizeClusterObject removes Read-only metadata fields that should not be written to git.
+func sanitizeClusterObject(cluster *clusterv1.Cluster) *clusterv1.Cluster {
+	clusterToCommit := clusterv1.Cluster{
+		TypeMeta: cluster.TypeMeta,
+		ObjectMeta: v1.ObjectMeta{
+			Name:              cluster.Name,
+			Namespace:         cluster.Namespace,
+			Annotations:       cluster.Annotations,
+			Labels:            cluster.Labels,
+			CreationTimestamp: cluster.CreationTimestamp,
+			Finalizers:        cluster.Finalizers,
+		},
+		Spec: cluster.Spec,
+		Status: clusterv1.ClusterStatus{
+			ControlPlaneReady:   cluster.Status.ControlPlaneReady,
+			InfrastructureReady: cluster.Status.InfrastructureReady,
+		},
+	}
+
+	return &clusterToCommit
+}
+
+func templateMessage(
+	messageTemplate string,
+	cluster *clusterv1.Cluster,
+) (string, error) {
+	t, err := template.New("commit message").Parse(messageTemplate)
+	if err != nil {
+		return "", fmt.Errorf("unable to create commit message template from spec: %w", err)
+	}
+
+	type templateData struct {
+		ClusterName      string
+		ClusterNamespace string
+		Version          string
+	}
+	templateValues := &templateData{
+		ClusterName:      cluster.Name,
+		ClusterNamespace: cluster.Namespace,
+		Version:          cluster.Spec.Topology.Version,
+	}
+
+	b := &strings.Builder{}
+	err = t.Execute(b, *templateValues)
+	if err != nil {
+		return "", fmt.Errorf("failed to run template from spec: %w", err)
+	}
+	return b.String(), nil
+}
+
+//nolint:funlen // TODO(dkoshkin): Refactor.
 func (r *InGitUpgradeAutomationReconciler) reconcileNormal(
 	ctx context.Context,
 	logger logr.Logger,
 	inGitUpgraderAutomation *kubernetesupgraderv1.InGitUpgradeAutomation,
 ) (ctrl.Result, error) {
+	tmp, err := os.MkdirTemp(
+		"",
+		fmt.Sprintf("%s-%s", inGitUpgraderAutomation.Namespace, inGitUpgraderAutomation.Name),
+	)
+	if err != nil {
+		r.Recorder.Eventf(
+			inGitUpgraderAutomation,
+			corev1.EventTypeWarning,
+			"MkdirTempError",
+			"Unable to create temp directory: %s",
+			err,
+		)
+		//nolint:wrapcheck // No additional context to add.
+		return ctrl.Result{}, err
+	}
+	defer func() {
+		if err := os.RemoveAll(tmp); err != nil {
+			logger.Error(err, "failed to remove working directory", "path", tmp)
+		}
+	}()
+
+	// pushBranch contains the branch name the commit needs to be pushed to.
+	// It takes the value of the push branch if one is specified,
+	// or if the push config is nil, then it takes the value of the checkout branch.
+	var pushBranch string
+	var switchBranch bool
+	if inGitUpgraderAutomation.Spec.Git.Push != nil &&
+		inGitUpgraderAutomation.Spec.Git.Push.Branch != "" {
+		pushBranch = inGitUpgraderAutomation.Spec.Git.Push.Branch
+		// We only need to switch branches when a branch has been specified in the push spec,
+		// and it is different from the one in the checkout ref.
+		if inGitUpgraderAutomation.Spec.Git.Push.Branch !=
+			inGitUpgraderAutomation.Spec.Git.Checkout.Reference.Branch {
+			switchBranch = true
+		}
+	} else {
+		pushBranch = inGitUpgraderAutomation.Spec.Git.Checkout.Reference.Branch
+	}
+	authOpts, err := git.GetAuthOpts(ctx, r.Client, inGitUpgraderAutomation.Spec.Git.Checkout)
+	if err != nil {
+		r.Recorder.Eventf(
+			inGitUpgraderAutomation,
+			corev1.EventTypeWarning,
+			"GetAuthOptsError",
+			"Error getting auth options: %s",
+			err,
+		)
+		//nolint:wrapcheck // No additional context to add.
+		return ctrl.Result{RequeueAfter: getAuthCredentialsRequeueDelay}, err
+	}
+	clientOpts := git.GetGitClientOpts(authOpts.Transport, switchBranch)
+	gitClient, err := gogit.NewClient(tmp, authOpts, clientOpts...)
+	if err != nil {
+		r.Recorder.Eventf(
+			inGitUpgraderAutomation,
+			corev1.EventTypeWarning,
+			"CreateGitClientError",
+			"Error creating git client: %s",
+			err,
+		)
+		//nolint:wrapcheck // No additional context to add.
+		return ctrl.Result{}, err
+	}
+	defer gitClient.Close()
+
+	cloneOpts := repository.CloneConfig{}
+	cloneOpts.Branch = inGitUpgraderAutomation.Spec.Git.Checkout.Reference.Branch
+
+	upgrader := &inGitUpgrader{
+		InGitUpgradeAutomation: inGitUpgraderAutomation,
+		gitClient:              gitClient,
+		cloneOpts:              cloneOpts,
+		switchBranch:           switchBranch,
+		pushBranch:             pushBranch,
+		updateStrategy:         inGitUpgraderAutomation.Spec.UpdateStrategy,
+		commitSpec:             inGitUpgraderAutomation.Spec.Git.Commit,
+	}
+
 	genericUpgrader := &genericUpgradeAutomationReconciler{
 		Client:   r.Client,
 		Scheme:   r.Scheme,
 		Recorder: r.Recorder,
-	}
-
-	upgrader := &inGitUpgrader{
-		InGitUpgradeAutomation: inGitUpgraderAutomation,
 	}
 	return genericUpgrader.reconcileNormal(ctx, logger, upgrader)
 }

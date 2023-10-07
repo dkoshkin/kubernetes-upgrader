@@ -30,6 +30,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-ingitupgradeautomation
+  failurePolicy: Fail
+  name: mingitupgradeautomation.kb.io
+  rules:
+  - apiGroups:
+    - kubernetesupgraded.dimitrikoshkin.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - ingitupgradeautomations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-machineimage
   failurePolicy: Fail
   name: mmachineimage.kb.io
@@ -89,6 +109,26 @@ webhooks:
     - UPDATE
     resources:
     - inclusterupgradeautomations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kubernetesupgraded-dimitrikoshkin-com-v1alpha1-ingitupgradeautomation
+  failurePolicy: Fail
+  name: vingitupgradeautomation.kb.io
+  rules:
+  - apiGroups:
+    - kubernetesupgraded.dimitrikoshkin.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - ingitupgradeautomations
   sideEffects: None
 - admissionReviewVersions:
   - v1

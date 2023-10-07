@@ -1,0 +1,154 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: job-annotator-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: job-annotator-role
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: job-annotator-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: job-annotator-sa
+    apiGroup: ""
+roleRef:
+  kind: Role
+  name: job-annotator-role
+  apiGroup: ""
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: Plan
+metadata:
+  labels:
+    app.kubernetes.io/name: plan
+    app.kubernetes.io/instance: plan-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: plan-sample
+spec:
+  versionRange: v1.27.x
+  machineImageSelector:
+    matchLabels:
+      imageBuilderVersion: v1
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: InGitUpgradeAutomation
+metadata:
+  labels:
+    app.kubernetes.io/name: ingitupgradeautomation
+    app.kubernetes.io/instance: ingitupgradeautomation-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: ingitupgradeautomation-sample
+spec:
+  clusterName: capi-quickstart
+  planRef:
+    name: plan-sample
+  git:
+    checkout:
+      url: "ssh://git@github.com/owner/repo"
+      secretRef:
+        name: git-credentials
+        namespace: kube-system
+    commit:
+      author:
+        name: "dkoshkin"
+        email: "dimitri.koshkin@gmail.com"
+      messageTemplate: "Updat Cluster {{ .ClusterNamespace }}/{{ .ClusterName }} to {{ .Version }}"
+  update:
+    path: cluster.yaml
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: MachineImageTemplate
+metadata:
+  labels:
+    app.kubernetes.io/name: machineimagetemplate
+    app.kubernetes.io/instance: machineimagetemplate-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: machineimagetemplate-sample
+spec:
+  template:
+    metadata:
+      labels:
+        imageBuilderVersion: v1
+    spec:
+      jobTemplate:
+        spec:
+          containers:
+            - name: output-writer
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - "/bin/bash"
+                - "-o"
+                - "xtrace" # Verbose output
+                - "-o"
+                - "errexit" # Exit on any error, except in a pipeline
+                - "-c"
+                - |
+                  kubectl annotate job \
+                    ${JOB_NAME} \
+                    -n ${JOB_NAMESPACE} \
+                    kubernetesupgraded.dimitrikoshkin.com/image-id="kindest/node:${KUBERNETES_VERSION}"
+              env:
+                - name: JOB_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.labels['job-name']
+                - name: JOB_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              volumeMounts:
+                - name: output
+                  mountPath: /tmp/output/
+          serviceAccountName: job-annotator-sa
+          volumes:
+            - name: vsphere-vars
+              secret:
+                secretName: image-builder-vsphere-vars
+            - name: output
+              emptyDir: {}
+          restartPolicy: Never
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: DebianRepositorySource
+metadata:
+  labels:
+    app.kubernetes.io/name: debianrepositorysource
+    app.kubernetes.io/instance: debianrepositorysource-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: debianrepositorysource-sample
+spec:
+  url: https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v1.27/deb/Packages
+  architecture: amd64
+---
+apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+kind: MachineImageSyncer
+metadata:
+  labels:
+    app.kubernetes.io/name: machineimagesyncer
+    app.kubernetes.io/instance: machineimagesyncer-sample
+    app.kubernetes.io/part-of: kubernetes-upgrader
+    app.kubernetes.io/created-by: kubernetes-upgrader
+  name: machineimagesyncer-sample
+spec:
+  versionRange: v1.27.x
+  sourceRef:
+    apiVersion: kubernetesupgraded.dimitrikoshkin.com/v1alpha1
+    kind: DebianRepositorySource
+    name: debianrepositorysource-sample
+  machineImageTemplateRef:
+    name: machineimagetemplate-sample

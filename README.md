@@ -72,7 +72,7 @@ read the [upstream docs](https://image-builder.sigs.k8s.io/capi/providers/vspher
 1.  Deploy the samples:
 
     ```sh
-    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/example-vsphere-with-job-template.yaml
+    kubectl apply -f https://github.com/dkoshkin/kubernetes-upgrader/releases/latest/download/example-vsphere.yaml
     ```
 
 1.  The controller will create a Job to build the image, after some time you should see the image in the vSphere UI.
@@ -157,10 +157,20 @@ Use Kubernetes version `v1.26.3` if you are planning on using the sample config.
     make deploy IMG=ghcr.io/dkoshkin/kubernetes-upgrader:$(gojq -r '.version' dist/metadata.json)
     ```
 
-1.  Deploy the Docker samples:
+1.  Deploy the Docker in-cluster samples:
 
     ```sh
-    kubectl apply -f config/samples/example-docker-static.yaml
+    kubectl apply -f config/samples/example-docker-static-in-cluster.yaml
+    ```
+
+1.  Deploy the Docker in-git samples. Update the sample file first with a Git repository that you have access to
+
+    ```sh
+    kubectl create secret generic -n kube-system git-credentials \
+      --from-file=identity=/Users/dkoshkin/.ssh/id \
+      --from-file=identity.pub=/Users/dkoshkin/.ssh/id.pub \
+      --from-file=known_hosts=/Users/dkoshkin/.ssh/github.com_known_hosts
+    kubectl apply -f config/samples/example-docker-static-in-git.yaml
     ```
 
 1.  You should see Pods created for Jobs that will "build" and image and the Cluster will be upgraded to the newest v1.27.x Kubernetes version.

@@ -45,7 +45,7 @@ type InGitUpgradeAutomationSpec struct {
 	// Update gives the specification for how to update the files in the repository.
 	// +required
 	// +kubebuilder:validation:Required
-	Update UpdateStrategy `json:"update"`
+	UpdateStrategy UpdateStrategy `json:"update"`
 }
 
 // UpdateStrategyName is the type for names that go in
@@ -53,25 +53,13 @@ type InGitUpgradeAutomationSpec struct {
 // +kubebuilder:validation:Enum=Setters
 type UpdateStrategyName string
 
-const (
-	// UpdateStrategySetters is the name of the update strategy that
-	// uses kyaml setters. NB the value in the enum annotation for the
-	// type, above.
-	UpdateStrategySetters UpdateStrategyName = "Setters"
-)
-
 // UpdateStrategy is a union of the various strategies for updating the Git repository.
 // Parameters for each strategy (if any) can be inlined here.
 type UpdateStrategy struct {
-	// Strategy names the strategy to be used.
+	// Path to the file containing the manifests to be updated.
 	// +required
-	// +kubebuilder:default=Setters
-	Strategy UpdateStrategyName `json:"strategy"`
-
-	// Path to the directory containing the manifests to be updated.
-	// Defaults to 'None', which translates to the root path of the GitRepositoryRef.
-	// +optional
-	Path string `json:"path,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+	Path string `json:"path"`
 }
 
 // InGitUpgradeAutomationStatus defines the observed state of InGitUpgradeAutomation.
