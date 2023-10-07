@@ -55,10 +55,12 @@ type PlanStatus struct {
 	Phase PlanPhase `json:"phase,omitempty"`
 
 	// MachineImageDetails holds the details for a MachineImage with the highest version within the range.
-	MachineImageDetails *MachineImageDetails `json:"machineImageDetails"`
+	// +optional
+	MachineImageDetails *MachineImageDetails `json:"machineImageDetails,omitempty"`
 
 	// MachineImageRef is a reference to the MachineImage that was applied to the cluster upgrade.
-	MachineImageRef *corev1.ObjectReference `json:"machineImageRef"`
+	// +optional
+	MachineImageRef *corev1.ObjectReference `json:"machineImageRef,omitempty"`
 }
 
 type MachineImageDetails struct {
